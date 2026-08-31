@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Coletor de Códigos</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin:0; padding:0; height:100%; overflow-x:hidden; }
+  body { font-family:'Segoe UI', Roboto, Arial, sans-serif; transition:background .15s, color .15s; }
+  button { font-family:inherit; }
+  #app { max-width:520px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative; }
+
+  /* ===== Overlay de boas-vindas / identificação do usuário ===== */
+  .overlay-boasvindas { position:fixed; inset:0; background:rgba(10,20,40,.62); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+  .card-boasvindas { background:#fff; border-radius:20px; padding:30px 26px; max-width:380px; width:100%; text-align:center; box-shadow:0 12px 44px rgba(0,0,0,.28); }
+  .card-boasvindas .icone { font-size:42px; margin-bottom:8px; }
+  .card-boasvindas h2 { font-size:19px; font-weight:800; color:#131A24; margin:0 0 4px; }
+  .card-boasvindas p { font-size:13px; color:#6B7686; margin:0 0 20px; line-height:1.4; }
+  .card-boasvindas label { display:block; text-align:left; font-size:11px; font-weight:800; color:#165D96; text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
+  .card-boasvindas input { width:100%; padding:13px 14px; font-size:15px; border:2px solid #165D96; border-radius:10px; margin-bottom:18px; outline:none; box-sizing:border-box; }
+  .card-boasvindas button { width:100%; padding:15px; border:none; border-radius:10px; color:#fff; font-weight:800; font-size:14.5px; cursor:pointer; min-height:52px; }
+
+  /* ===== Topo padronizado — reduzido para dar mais espaço ao conteúdo ===== */
+  .topo { padding:6px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; color:#fff; flex-shrink:0; }
+  .topo .esq { display:flex; align-items:center; gap:8px; min-width:0; }
+  .topo .icone-btn { font-size:16px; cursor:pointer; background:none; border:none; color:#fff; padding:4px; min-width:30px; min-height:30px; }
+  .topo h1 { font-size:13px; font-weight:800; margin:0; letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .topo .dir { display:flex; align-items:center; gap:4px; font-size:16px; flex-shrink:0; }
+  .topo .dir button { background:none; border:none; color:#fff; font-size:16px; cursor:pointer; padding:4px; min-width:30px; min-height:30px; }
+
+  /* ===== Barra fixa de leitura + busca — sempre visível, fora da área de rolagem ===== */
+  .barra-fixa-leitura { flex-shrink:0; padding:12px 16px 10px; box-shadow:0 2px 8px rgba(20,30,50,.05); position:relative; z-index:2; }
+
+  .conteudo { flex:1; padding:16px; padding-bottom:150px; overflow-y:auto; }
+
+  /* ===== Hero da home — reduzido para deixar o app mais centralizado/equilibrado ===== */
+  .hero { border-radius:0 0 20px 20px; color:#fff; padding:16px 22px 16px; text-align:left; }
+  .hero .topo-hero { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  .hero .usuario-chip { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,.15); border-radius:20px; padding:6px 12px 6px 8px; font-size:12.5px; font-weight:700; }
+  .hero .usuario-chip .avatar { width:24px; height:24px; border-radius:50%; background:rgba(255,255,255,.3); display:flex; align-items:center; justify-content:center; font-size:12px; }
+  .hero .linha-titulo { display:flex; align-items:center; gap:10px; }
+  .hero .icone-grande { font-size:26px; line-height:1; }
+  .hero h2 { font-size:18px; font-weight:800; margin:0; line-height:1.15; }
+  .hero p { font-size:12px; margin:6px 0 0; line-height:1.35; opacity:.92; }
+
+  /* ===== Cards de módulo (home) ===== */
+  .modulos-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px; }
+  .card-modulo { border-radius:14px; padding:12px 11px; display:flex; flex-direction:column; gap:6px; cursor:pointer; box-shadow:0 2px 8px rgba(20,30,50,.08); min-height:98px; }
+  .card-modulo .icone { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:17px; color:#fff; }
+  .card-modulo .titulo { font-size:13.5px; font-weight:800; }
+  .card-modulo .desc { font-size:10.5px; opacity:.75; line-height:1.25; }
+
+  .stats-rodape { border-radius:16px; margin:8px 16px; padding:16px; display:flex; align-items:center; gap:14px; }
+  .stats-rodape .icone { width:42px; height:42px; border-radius:11px; color:#fff; display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0; }
+  .stats-rodape .grupo { flex:1; display:flex; }
+  .stats-rodape .item { flex:1; }
+  .stats-rodape .item .n { font-size:21px; font-weight:800; }
+  .stats-rodape .item .l { font-size:10.5px; opacity:.7; }
+  .versao-rodape { text-align:center; font-size:11.5px; opacity:.55; margin:16px 0 4px; }
+
+  /* ===== Cards genéricos ===== */
+  .card { border-radius:16px; padding:16px; margin-bottom:14px; box-shadow:0 2px 8px rgba(20,30,50,.06); }
+  .card h3 { margin:0 0 4px; font-size:14.5px; font-weight:800; display:flex; align-items:center; gap:8px; }
+  .card .desc-card { font-size:11.5px; opacity:.65; margin:0 0 12px; line-height:1.4; }
+
+  .lote-linha { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .lote-info .rotulo { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; opacity:.6; margin-bottom:4px; }
+  .lote-info .nome { font-size:16px; font-weight:800; }
+  .btn-outline { background:none; border:1.5px solid; font-weight:700; font-size:12px; padding:9px 14px; border-radius:9px; cursor:pointer; min-height:40px; }
+
+  /* ===== Painel status sempre visível ===== */
+  .status-leitura { border-radius:16px; padding:16px; margin-bottom:14px; border:1.5px solid; }
+  .status-leitura .rotulo { font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; font-weight:800; }
+  .status-leitura .linha { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .status-leitura .codigo { font-size:25px; font-weight:800; font-family:'Consolas',monospace; letter-spacing:.01em; word-break:break-all; }
+  .status-leitura .marca { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; color:#fff; flex-shrink:0; }
+  .status-leitura .sub { font-size:12.5px; margin-top:6px; }
+
+  /* ===== Contador fixo logo abaixo da última leitura, sempre visível ===== */
+  .contador-fixo { display:flex; align-items:center; justify-content:space-between; border-radius:14px; padding:12px 16px; border:1.5px solid; margin-bottom:10px; }
+  .contador-fixo .rotulo-mini { font-size:11px; text-transform:uppercase; letter-spacing:.05em; font-weight:800; }
+  .contador-fixo .valor-grande { font-size:26px; font-weight:800; font-family:'Consolas',monospace; line-height:1; }
+
+  .scan-box { width:100%; border:2.5px solid; border-radius:12px; padding:17px 16px; font-size:16px; font-family:'Consolas',monospace; outline:none; margin-bottom:10px; min-height:58px; }
+
+  .stats-grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:14px; }
+  .stat-box { border-radius:14px; padding:13px 8px; text-align:center; box-shadow:0 2px 6px rgba(20,30,50,.06); }
+  .stat-box .icone { font-size:18px; margin-bottom:4px; }
+  .stat-box .n { font-size:21px; font-weight:800; }
+  .stat-box .l { font-size:10px; opacity:.65; text-transform:uppercase; letter-spacing:.03em; margin-top:2px; }
+
+  .busca-linha { display:flex; gap:8px; margin-bottom:0; }
+  .busca-linha input { flex:1; border-radius:12px; padding:13px 14px; font-size:14px; outline:none; border:1.5px solid; min-height:48px; }
+  .busca-linha .filtro-btn { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; cursor:pointer; flex-shrink:0; border:1.5px solid; }
+
+  .lista-titulo { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .lista-titulo .txt { font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; opacity:.65; }
+  .lista-titulo .n { font-size:12.5px; font-weight:800; }
+
+  .item-codigo { border-radius:12px; padding:12px 13px; display:flex; align-items:center; gap:10px; margin-bottom:8px; box-shadow:0 1px 4px rgba(20,30,50,.05); }
+  .item-codigo .marca { width:24px; height:24px; border-radius:50%; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+  .item-codigo .txt { flex:1; min-width:0; }
+  .item-codigo .cod { font-size:15px; font-weight:700; font-family:'Consolas',monospace; }
+  .item-codigo .dup-tag { font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:5px; margin-left:6px; }
+  .item-codigo .hora { font-size:11.5px; opacity:.6; }
+  .item-codigo .remover { font-size:19px; background:none; border:none; cursor:pointer; padding:6px; min-width:38px; min-height:38px; }
+
+  .vazio { text-align:center; padding:38px 20px; font-size:13.5px; opacity:.6; }
+
+  /* ===== Barra de ações do rodapé — botões grandes, fáceis de tocar no coletor ===== */
+  .barra-inferior { position:fixed; left:50%; transform:translateX(-50%); bottom:66px; max-width:520px; width:100%; border-top:1px solid; padding:10px 14px; display:flex; gap:8px; box-shadow:0 -2px 12px rgba(20,30,50,.08); z-index:5; }
+  .barra-inferior button { flex:1; border:none; border-radius:14px; padding:10px 6px; font-size:11.5px; font-weight:800; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:#fff; min-height:64px; }
+  .barra-inferior button .icone { font-size:22px; line-height:1; }
+  .barra-inferior button:disabled { opacity:.45; cursor:not-allowed; }
+
+  /* ===== Menu principal — barra inferior fixa com ícones grandes e texto ===== */
+  .nav-inferior { position:fixed; left:50%; transform:translateX(-50%); bottom:0; max-width:520px; width:100%; display:flex; z-index:6; }
+  .nav-inferior button { flex:1; background:none; border:none; padding:9px 4px 8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:11px; font-weight:700; cursor:pointer; min-height:66px; }
+  .nav-inferior .icone { font-size:27px; line-height:1; }
+
+  .modal-fundo { position:fixed; inset:0; background:rgba(10,14,20,.55); display:flex; align-items:flex-end; justify-content:center; z-index:50; }
+  .modal-fundo.centralizado { align-items:center; padding:20px; }
+  .modal-folha { width:100%; max-width:520px; border-radius:20px 20px 0 0; padding:22px 18px 28px; }
+  .modal-fundo.centralizado .modal-folha { border-radius:18px; padding:24px; }
+  .modal-folha h3 { margin:0 0 4px; font-size:17px; font-weight:800; }
+  .modal-folha p.sub { margin:0 0 16px; font-size:12.5px; opacity:.65; }
+  .opcao-exportar { display:flex; align-items:center; gap:14px; padding:15px 6px; border-bottom:1px solid rgba(120,130,150,.15); cursor:pointer; min-height:56px; }
+  .opcao-exportar:last-child { border-bottom:none; }
+  .opcao-exportar .icone { width:42px; height:42px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:19px; color:#fff; flex-shrink:0; }
+  .opcao-exportar .txt .t { font-size:14.5px; font-weight:700; }
+  .opcao-exportar .txt .d { font-size:11.5px; opacity:.6; margin-top:1px; }
+
+  .coleta-hist { border-radius:14px; padding:14px; margin-bottom:10px; display:flex; align-items:center; gap:12px; box-shadow:0 2px 6px rgba(20,30,50,.06); cursor:pointer; }
+  .coleta-hist .icone { width:46px; height:46px; border-radius:12px; color:#fff; display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0; }
+  .coleta-hist .txt { flex:1; min-width:0; }
+  .coleta-hist .nome { font-size:14.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .coleta-hist-card { border-radius:14px; margin-bottom:10px; box-shadow:0 2px 6px rgba(20,30,50,.06); overflow:hidden; }
+  .coleta-hist-card .coleta-hist-topo { padding:14px; display:flex; align-items:center; gap:12px; cursor:pointer; }
+  .coleta-hist-card .icone { width:46px; height:46px; border-radius:12px; color:#fff; display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0; }
+  .coleta-hist-card .txt { flex:1; min-width:0; }
+  .coleta-hist-card .nome { font-size:14.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .coleta-hist-acoes { display:flex; gap:8px; padding:10px 14px 14px; border-top:1px solid; }
+  .coleta-hist-acoes button { flex:1; border:none; border-radius:10px; padding:10px 8px; font-size:12.5px; font-weight:800; cursor:pointer; color:#fff; min-height:42px; }
+  .coleta-hist-acoes button:disabled { opacity:.4; cursor:not-allowed; }
+  .coleta-hist .meta { font-size:11.5px; opacity:.6; margin-top:2px; }
+  .coleta-hist .badge-status { font-size:9.5px; font-weight:800; padding:4px 9px; border-radius:6px; text-transform:uppercase; flex-shrink:0; }
+
+  .feature-linha { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid rgba(120,130,150,.12); }
+  .feature-linha:last-child { border-bottom:none; }
+  .feature-linha .marca { font-size:16px; flex-shrink:0; }
+  .feature-linha .txt { font-size:13px; line-height:1.4; }
+
+  .config-linha { display:flex; align-items:center; justify-content:space-between; padding:15px 0; border-bottom:1px solid rgba(120,130,150,.12); }
+  .config-linha:last-child { border-bottom:none; }
+  .config-linha .t { font-size:14px; font-weight:700; }
+  .config-linha .d { font-size:11.5px; opacity:.6; margin-top:2px; }
+  .toggle { width:48px; height:27px; border-radius:20px; position:relative; cursor:pointer; flex-shrink:0; transition:background .15s; }
+  .toggle .bola { position:absolute; top:2px; left:2px; width:23px; height:23px; border-radius:50%; background:#fff; transition:left .15s; box-shadow:0 1px 3px rgba(0,0,0,.25); }
+  .toggle.on .bola { left:23px; }
+
+  .stat-grande { border-radius:16px; padding:18px; text-align:center; box-shadow:0 2px 6px rgba(20,30,50,.06); }
+  .stat-grande .n { font-size:30px; font-weight:800; }
+  .stat-grande .l { font-size:11px; opacity:.65; text-transform:uppercase; letter-spacing:.03em; margin-top:4px; }
+
+  /* ===== Responsivo: telas pequenas (coletores compactos) ===== */
+  @media (max-width: 340px) {
+    .topo h1 { font-size:12.5px; }
+    .stats-grid3 { gap:6px; }
+    .barra-inferior button { font-size:10px; padding:8px 4px; }
+    .nav-inferior button { font-size:9.5px; }
+  }
+
+  /* ===== Responsivo: tablets e coletores de tela maior ===== */
+  @media (min-width: 700px) {
+    #app, .nav-inferior, .barra-inferior { max-width:760px; }
+    .modulos-grid { grid-template-columns:repeat(3, 1fr); }
+    .topo { padding:11px 22px; }
+    .topo h1 { font-size:16px; }
+    .conteudo { padding:22px 26px 170px; }
+    .scan-box { font-size:17px; padding:19px 20px; min-height:62px; }
+    .nav-inferior button { min-height:70px; font-size:12px; }
+    .nav-inferior .icone { font-size:29px; }
+    .barra-inferior button { min-height:68px; font-size:12.5px; }
+  }
+
+  /* ===== Responsivo: telas grandes / desktop usado como coletor ===== */
+  @media (min-width: 1024px) {
+    #app, .nav-inferior, .barra-inferior { max-width:920px; }
+    .modulos-grid { grid-template-columns:repeat(4, 1fr); }
+    .stats-grid3 { gap:16px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="overlayBoasVindas" class="overlay-boasvindas">
+  <div class="card-boasvindas">
+    <div class="icone">📷</div>
+    <h2>Bem-vindo(a)!</h2>
+    <p>Informe seu nome para identificar as leituras realizadas nesta sessão do Coletor de Códigos.</p>
+    <label>Seu nome</label>
+    <input id="inputUsuarioBoasVindas" type="text" placeholder="Digite seu nome" oninput="onUsuarioBoasVindasChange()" autocomplete="off" />
+    <button id="btnEntrarApp" disabled style="background:#9BA4AA; cursor:not-allowed;" onclick="confirmarUsuarioBoasVindas()">ENTRAR</button>
+  </div>
+</div>
+
+<div id="app"></div>
+
+<script>
+// ======================= TEMA (paleta profissional + modo alto contraste) =======================
+function paleta() {
+  const escuro = estado.temaEscuro;
+  return escuro ? {
+    bg:"#0A0D10", fg:"#EFF3F5", painel:"#13181C", painelBorda:"#222C33", campoBg:"#1A2025",
+    muted:"#879299", primaria:"#227CC5", primariaEscura:"#114A78",
+    sucesso:"#2284C5", sucessoBg:"#0F1F2A", sucessoFg:"#5FB1E6",
+    erro:"#EF4444", erroBg:"#2E1414", erroFg:"#FF8B85",
+    alerta:"#F59E0B", alertaBg:"#2E2410", alertaFg:"#FBC85C",
+    violeta:"#8B5CF6", indigo:"#6366F1", ambar:"#D97706", slate:"#64748B", teal:"#1968B3",
+    navFundo:"#0F1920",
+  } : {
+    bg:"#F1F4F6", fg:"#121A20", painel:"#FFFFFF", painelBorda:"#DCE3E8", campoBg:"#F3F6F8",
+    muted:"#5E6A72", primaria:"#165D96", primariaEscura:"#114874",
+    sucesso:"#176BA2", sucessoBg:"#E7F1F7", sucessoFg:"#155580",
+    erro:"#DC2626", erroBg:"#FCEAEA", erroFg:"#B91C1C",
+    alerta:"#D97706", alertaBg:"#FEF3DC", alertaFg:"#92620A",
+    violeta:"#7C3AED", indigo:"#4F46E5", ambar:"#D97706", slate:"#475569", teal:"#14528D",
+    navFundo:"#0B253B",
+  };
+}
+
+// ======================= ESTADO (em memória + salvamento automático no armazenamento local) =======================
+const APP_VERSION = "2.3.0";
+const CHAVE_AUTOSAVE = "coletorCodigos_autosave_v1";
+let estado = {
+  tela: "inicio",
+  usuarioNome: "",
+  coletas: [],
+  coletaAtualId: null,
+  somAtivo: true,
+  temaEscuro: false,
+  busca: "",
+  somenteDuplicados: false,
+  ultimaLeitura: null,
+  ultimoSalvamento: null,
+  modoQuiosque: false,
+  telaQuiosque: null,
+  pinQuiosque: "",
+  scannerFisico: true,   // bloqueia o teclado virtual ao focar o campo de leitura, ativado por padrão
+  backupArquivoAtivo: true,   // gera automaticamente um arquivo de backup no intervalo escolhido abaixo
+  backupArquivoIntervaloMin: 10, // intervalo do backup automático em arquivo: 10, 30 ou 60 (1 hora) minutos
+  ultimoBackupArquivo: null,
+};
+let wakeLockRef = null;
+let proximoId = 1;
+function novoId() { return proximoId++; }
+function coletaAtual() { return estado.coletas.find(c => c.id === estado.coletaAtualId) || null; }
+
+// ======================= SALVAMENTO AUTOMÁTICO (proteção contra perda de dados) =======================
+// Grava o estado atual (coletas + próximo id + usuário) no armazenamento local do navegador. Isso
+// acontece imediatamente após cada leitura/alteração E também a cada 10 minutos por segurança (ver
+// setInterval mais abaixo), garantindo que, se o app fechar, travar ou o aparelho reiniciar, os
+// dados coletados até aquele momento sejam recuperados automaticamente na próxima abertura.
+function persistirEstadoLocal() {
+  estado.ultimoSalvamento = new Date().toISOString();
+  try {
+    const dados = { versao: 2, salvoEm: estado.ultimoSalvamento, proximoId, usuarioNome: estado.usuarioNome, coletas: estado.coletas };
+    localStorage.setItem(CHAVE_AUTOSAVE, JSON.stringify(dados));
+  } catch (e) {
+    // Armazenamento indisponível (modo anônimo/privado, quota cheia, etc.). A coleta continua
+    // funcionando normalmente em memória — só não fica protegida contra fechar o navegador.
+    console.warn("Salvamento automático local indisponível:", e);
+  }
+}
+// Recupera a última sessão salva automaticamente, se existir, ao abrir o app.
+function restaurarEstadoLocalAoAbrir() {
+  try {
+    const bruto = localStorage.getItem(CHAVE_AUTOSAVE);
+    if (!bruto) return false;
+    const dados = JSON.parse(bruto);
+    if (!dados || !Array.isArray(dados.coletas) || dados.coletas.length === 0) return false;
+    estado.coletas = dados.coletas;
+    estado.usuarioNome = dados.usuarioNome || "";
+    proximoId = dados.proximoId || (Math.max(0, ...dados.coletas.map(c => c.id)) + 1);
+    estado.ultimoSalvamento = dados.salvoEm || null;
+    return true;
+  } catch (e) {
+    console.warn("Não foi possível recuperar o salvamento automático anterior:", e);
+    return false;
+  }
+}
+// Gera um arquivo de backup (.json, mesmo formato aceito em "Restaurar backup") no intervalo escolhido
+// pelo usuário (10, 30 ou 60 minutos — ver estado.backupArquivoIntervaloMin), como uma segunda camada
+// de proteção além do armazenamento local — útil para levar os dados para outro aparelho ou guardar
+// fora do navegador. Esta função é chamada com frequência (a cada 30s, ver setInterval mais abaixo) e
+// decide internamente se já é hora de gerar um novo arquivo, o que permite trocar o intervalo em
+// Configurações a qualquer momento, sem precisar recarregar a página.
+// Usa nome fixo por coleta (sem carimbo de data/hora) para funcionar como um "arquivo mais recente" que
+// se atualiza; em alguns navegadores de desktop, se a pasta de downloads não permitir sobrescrever
+// automaticamente, pode gerar cópias numeradas (ex.: "(1)") em vez de substituir — isso depende da
+// configuração do navegador/aparelho.
+function fazerBackupArquivoPeriodico() {
+  if (!estado.backupArquivoAtivo) return;
+  const intervaloMs = (estado.backupArquivoIntervaloMin || 10) * 60 * 1000;
+  if (!estado.ultimoBackupArquivo) {
+    // Ainda não houve nenhum backup automático nesta sessão: apenas marca a referência de tempo
+    // agora, para que o primeiro backup só aconteça depois de um intervalo completo (evita baixar
+    // um arquivo extra logo nos primeiros segundos após abrir o app ou iniciar uma coleta).
+    estado.ultimoBackupArquivo = new Date().toISOString();
+    return;
+  }
+  const ultimoBackupEm = new Date(estado.ultimoBackupArquivo).getTime();
+  if (Date.now() - ultimoBackupEm < intervaloMs) return; // ainda não chegou a hora do próximo backup
+  const c = coletaAtual();
+  if (!c || c.codigos.length === 0) return;
+  const dados = { versao: 2, salvoEm: new Date().toISOString(), proximoId, coletas: [c] };
+  baixarBlob(JSON.stringify(dados, null, 2), "application/json", `backup-auto_${nomeArquivoBase(c)}.json`);
+  estado.ultimoBackupArquivo = dados.salvoEm;
+}
+
+// Altera o intervalo do backup automático em arquivo (10, 30 ou 60 minutos)
+function definirIntervaloBackupArquivo(minutos) {
+  estado.backupArquivoIntervaloMin = minutos;
+  tocarFeedback("notificacao");
+  render();
+}
+
+// ======================= IDENTIFICAÇÃO DO USUÁRIO (tela de boas-vindas) =======================
+function onUsuarioBoasVindasChange() {
+  const btn = document.getElementById("btnEntrarApp");
+  const input = document.getElementById("inputUsuarioBoasVindas");
+  const ok = input.value.trim().length > 0;
+  btn.disabled = !ok;
+  btn.style.background = ok ? "#165D96" : "#9BA4AA";
+  btn.style.cursor = ok ? "pointer" : "not-allowed";
+}
+function confirmarUsuarioBoasVindas() {
+  const input = document.getElementById("inputUsuarioBoasVindas");
+  if (!input.value.trim()) return;
+  estado.usuarioNome = input.value.trim();
+  document.getElementById("overlayBoasVindas").style.display = "none";
+  tocarFeedback("sucesso");
+  render();
+}
+function trocarUsuario() {
+  const overlay = document.getElementById("overlayBoasVindas");
+  const input = document.getElementById("inputUsuarioBoasVindas");
+  input.value = estado.usuarioNome || "";
+  onUsuarioBoasVindasChange();
+  overlay.style.display = "flex";
+  setTimeout(() => input.focus(), 0);
+}
+
+// ======================= FEEDBACK SONORO (para todas as operações) =======================
+// IMPORTANTE: o contexto de áudio é criado UMA ÚNICA VEZ e reaproveitado em todos os bipes.
+// Antes, cada chamada criava um "new AudioContext()" novo e nunca o fechava — em uma sessão de
+// coleta longa, com centenas/milhares de leituras, isso ia empilhando contextos de áudio abertos
+// até esbarrar no limite do navegador (a maioria trava em 4 a 6 simultâneos). Quando esse limite
+// era atingido, o navegador travava por uma fração de segundo para liberar recursos — e era
+// exatamente nesse instante que a tela podia demorar para atualizar o contador/total, mesmo o
+// código já tendo sido registrado corretamente em memória e salvo. Reaproveitar um único contexto
+// elimina esse acúmulo e essa travada intermitente.
+let audioCtxCompartilhado = null;
+function obterAudioCtx() {
+  if (!audioCtxCompartilhado) {
+    audioCtxCompartilhado = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtxCompartilhado.state === "suspended") {
+    audioCtxCompartilhado.resume().catch(() => {});
+  }
+  return audioCtxCompartilhado;
+}
+function tocarFeedback(tipo) {
+  // tipo: "sucesso" (curto) | "erro" (longo) | "codigoInvalido" (buzina dupla e grave) | "alerta" (duplo) | "notificacao" (leve)
+  if (!estado.somAtivo) return;
+  try {
+    const ctx = obterAudioCtx();
+    const tocar = (freq, dur, atraso, tipoOnda) => setTimeout(() => {
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq; osc.type = tipoOnda || "sine";
+      gain.gain.setValueAtTime(0.16, ctx.currentTime);
+      osc.start(); osc.stop(ctx.currentTime + dur);
+    }, atraso);
+    if (tipo === "sucesso") tocar(1000, 0.09, 0);
+    else if (tipo === "erro") tocar(220, 0.32, 0);
+    // Som exclusivo para código incorreto/inválido lido no coletor: uma buzina grave e "áspera"
+    // (onda quadrada) em dois toques curtos — bem diferente do bipe de sucesso e do erro genérico,
+    // para ficar fácil de reconhecer sem olhar para a tela.
+    else if (tipo === "codigoInvalido") { tocar(180, 0.18, 0, "square"); tocar(140, 0.22, 200, "square"); }
+    else if (tipo === "alerta") { tocar(700, 0.08, 0); tocar(700, 0.08, 140); }
+    else if (tipo === "notificacao") tocar(1200, 0.07, 0);
+  } catch (e) {}
+}
+
+// ======================= NAVEGAÇÃO =======================
+function irPara(tela) {
+  if (estado.modoQuiosque && tela !== estado.telaQuiosque) {
+    abrirModalPinSaida();
+    return;
+  }
+  estado.tela = tela;
+  render();
+}
+
+// ======================= MODO QUIOSQUE =======================
+async function solicitarWakeLock() {
+  try {
+    if ("wakeLock" in navigator) {
+      wakeLockRef = await navigator.wakeLock.request("screen");
+    }
+  } catch (e) { /* alguns navegadores exigem gesto do usuário; falha silenciosa */ }
+}
+function liberarWakeLock() {
+  if (wakeLockRef) { try { wakeLockRef.release(); } catch (e) {} wakeLockRef = null; }
+}
+function definirPinQuiosque() {
+  const pin = prompt("Defina um PIN de 4 a 8 dígitos para desbloquear o Modo Quiosque:", "");
+  if (pin === null) return;
+  const limpo = pin.trim();
+  if (!/^\d{4,8}$/.test(limpo)) { alert("O PIN deve conter de 4 a 8 dígitos numéricos."); return; }
+  const confirmacao = prompt("Confirme o PIN:", "");
+  if (confirmacao === null) return;
+  if (confirmacao.trim() !== limpo) { alert("Os PINs não coincidem. Tente novamente."); return; }
+  estado.pinQuiosque = limpo;
+  tocarFeedback("sucesso");
+  alert("PIN definido com sucesso.");
+  render();
+}
+function toggleModoQuiosque() {
+  if (estado.modoQuiosque) abrirModalPinSaida();
+  else ativarModoQuiosque();
+}
+function ativarModoQuiosque() {
+  if (!estado.pinQuiosque) { alert("Defina um PIN de saída antes de ativar o Modo Quiosque."); return; }
+  if (!coletaAtual()) {
+    if (estado.coletas.length === 0) { alert("Crie ou abra uma coleta antes de ativar o Modo Quiosque."); return; }
+    estado.coletaAtualId = estado.coletas[0].id;
+  }
+  estado.modoQuiosque = true;
+  estado.telaQuiosque = "coleta";
+  // CORREÇÃO: NÃO forçar mais o modo "leitor físico" (inputmode="none") automaticamente aqui.
+  // Essa força bruta quebrava a leitura por completo para quem usa um coletor que não é um
+  // teclado físico de verdade (ex.: apps de leitura por câmera, ou scanners que injetam o
+  // código via método de entrada/IME do Android) — em qualquer campo com inputmode="none", o
+  // Android recusa QUALQUER método de entrada, inclusive esses. O Modo Quiosque agora respeita
+  // a configuração que o usuário já escolheu em "Leitor físico / teclado integrado", igual
+  // funciona fora do Modo Quiosque. A questão do teclado virtual tirando o app da tela cheia é
+  // tratada separadamente no listener de fullscreenchange, sem precisar desativar o teclado.
+  try { document.documentElement.requestFullscreen && document.documentElement.requestFullscreen().catch(() => {}); } catch (e) {}
+  solicitarWakeLock();
+  try { history.pushState({ kiosk: true }, "", location.href); } catch (e) {}
+  tocarFeedback("sucesso");
+  irPara("coleta");
+}
+function abrirModalPinSaida() {
+  const tentativa = prompt("🔒 Modo Quiosque ativo.\nDigite o PIN para desbloquear a navegação:");
+  if (tentativa === null) return;
+  if (tentativa.trim() !== estado.pinQuiosque) {
+    tocarFeedback("erro");
+    alert("PIN incorreto.");
+    return;
+  }
+  desativarModoQuiosque();
+}
+function desativarModoQuiosque() {
+  estado.modoQuiosque = false;
+  estado.telaQuiosque = null;
+  liberarWakeLock();
+  if (document.fullscreenElement) { document.exitFullscreen().catch(() => {}); }
+  tocarFeedback("sucesso");
+  estado.tela = "config";
+  render();
+}
+function toggleScannerFisico() { estado.scannerFisico = !estado.scannerFisico; tocarFeedback("notificacao"); render(); }
+function refocarCampoLeitura() {
+  if (estado.tela !== "coleta") return;
+  const i = document.getElementById("scanInput");
+  if (!i || i.disabled) return;
+  const ativo = document.activeElement;
+  if (ativo && ativo.id === "buscaInput") return;
+  if (ativo !== i) i.focus({ preventScroll: true });
+}
+function toggleTema() { estado.temaEscuro = !estado.temaEscuro; tocarFeedback("notificacao"); render(); }
+function toggleSom() { estado.somAtivo = !estado.somAtivo; render(); }
+
+function iniciarNovaColeta() {
+  const nomeUsuario = prompt("Nome do usuário:", estado.usuarioNome || "");
+  if (nomeUsuario === null) return;
+  const nomeLimpo = nomeUsuario.trim();
+  if (!nomeLimpo) { alert("Informe o nome do usuário para continuar."); return; }
+  const agora = new Date();
+  const dataHora = agora.toLocaleDateString("pt-BR") + " " + agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const nome = `${nomeLimpo} — ${dataHora}`;
+  const c = { id: novoId(), nome, criadaEm: agora.toISOString(), finalizada: false, codigos: [] };
+  estado.coletas.unshift(c);
+  estado.coletaAtualId = c.id;
+  estado.ultimaLeitura = null;
+  estado.busca = "";
+  estado.somenteDuplicados = false;
+  persistirEstadoLocal();
+  tocarFeedback("sucesso");
+  irPara("coleta");
+}
+function abrirColeta(id) {
+  estado.coletaAtualId = id;
+  estado.ultimaLeitura = null;
+  estado.busca = "";
+  estado.somenteDuplicados = false;
+  irPara("coleta");
+}
+function alterarNomeColeta() {
+  const c = coletaAtual();
+  if (!c) return;
+  const nome = prompt("Novo nome/descrição da coleta:", c.nome);
+  if (nome === null || !nome.trim()) return;
+  c.nome = nome.trim();
+  persistirEstadoLocal();
+  tocarFeedback("notificacao");
+  render();
+}
+
+// ======================= LEITURA DE CÓDIGO =======================
+function processarLeitura(valorBruto) {
+  const c = coletaAtual();
+  if (!c) return;
+  const val = (valorBruto || "").trim();
+  if (!val) return;
+
+  // ATALHO DE QUANTIDADE: depois de escanear um código válido, o operador pode digitar só a
+  // quantidade (1 a 4 dígitos, ex.: "5") e apertar Enter — sem precisar escanear várias vezes.
+  // O arquivo gerado (TXT/CSV) continua exatamente igual ao formato atual: cada unidade continua
+  // sendo uma linha própria do código, como se tivesse sido escaneada manualmente aquela
+  // quantidade de vezes. Isso só é interpretado como quantidade quando existe uma última leitura
+  // válida — nunca conflita com um código de barras de verdade, que sempre tem 12 ou 13 dígitos.
+  if (/^\d{1,4}$/.test(val) && estado.ultimaLeitura && estado.ultimaLeitura.valido && estado.ultimaLeitura.codigo) {
+    somarQuantidadeUltimaLeitura(parseInt(val, 10));
+    return;
+  }
+
+  if (!/^\d{12,13}$/.test(val)) {
+    estado.ultimaLeitura = { codigo: val, valido: false, motivo: `Código inválido — apenas 12 ou 13 dígitos são aceitos (recebido: ${val.length} caractere(s)).` };
+    tocarFeedback("codigoInvalido");
+    render();
+    return;
+  }
+  c.codigos.unshift({ codigo: val, hora: new Date().toISOString(), usuario: estado.usuarioNome || "—" });
+  const qtdEsteCodigo = c.codigos.reduce((s, k) => s + (k.codigo === val ? 1 : 0), 0);
+  // O código é sempre aceito normalmente, seguindo as regras já existentes (12 ou 13 dígitos).
+  // Isso aqui é só um alerta visual: quando o código não começa com "3000" nem "789", a cor da
+  // "ÚLTIMA LEITURA" muda pra âmbar (em vez do azul padrão de leitura válida), pra chamar atenção
+  // de que é um prefixo fora do comum — mas continua sendo contado e salvo normalmente.
+  const prefixoReconhecido = /^(3000|789)/.test(val);
+  estado.ultimaLeitura = { codigo: val, valido: true, motivo: `Código válido (${val.length} dígitos)`, quantidade: qtdEsteCodigo, prefixoReconhecido };
+  persistirEstadoLocal();
+  tocarFeedback("sucesso");
+  render();
+}
+function somarQuantidadeUltimaLeitura(qtdDigitada) {
+  const c = coletaAtual();
+  if (!c || !estado.ultimaLeitura) return;
+  const codigo = estado.ultimaLeitura.codigo;
+
+  // A quantidade digitada agora SOMA com o que já foi coletado por leitura unitária desse código
+  // (e vice-versa: se depois o operador voltar a escanear/digitar mais, continua somando em cima
+  // do total acumulado). Ou seja, o número digitado nunca substitui o total — ele é sempre um
+  // acréscimo sobre o que já existe na coleta.
+  const qtdAtual = c.codigos.reduce((s, k) => s + (k.codigo === codigo ? 1 : 0), 0);
+  let qtdAdicional = qtdDigitada;
+  if (qtdAdicional <= 0) { render(); return; }
+  if (qtdAtual + qtdAdicional > 9999) qtdAdicional = 9999 - qtdAtual;
+  if (qtdAdicional <= 0) { render(); return; }
+
+  const qtdFinal = qtdAtual + qtdAdicional;
+
+  const confirmado = confirm(
+    `Confirma a soma de quantidade?\n\nCódigo: ${codigo}\nJá coletado (unidade): ${qtdAtual}\nDigitado agora: ${qtdAdicional}\nTotal após somar: ${qtdFinal}\n\nIsso vai adicionar ${qtdAdicional} unidade(s) desse código na coleta, somando ao que já estava coletado.`
+  );
+  if (!confirmado) {
+    render();
+    return;
+  }
+
+  // adiciona as unidades digitadas — cada uma vira sua própria linha, igual a uma leitura normal
+  for (let i = 0; i < qtdAdicional; i++) {
+    c.codigos.unshift({ codigo, hora: new Date().toISOString(), usuario: estado.usuarioNome || "—" });
+  }
+
+  estado.ultimaLeitura = {
+    codigo, valido: true,
+    motivo: `Quantidade somada — total ${qtdFinal}`,
+    quantidade: qtdFinal,
+    prefixoReconhecido: /^(3000|789)/.test(codigo),
+  };
+  persistirEstadoLocal();
+  tocarFeedback("sucesso");
+  mostrarToast(`🔢 Quantidade somada — ${codigo}: ${qtdAtual} já coletada(s) + ${qtdAdicional} digitada(s) = ${qtdFinal} no total.`);
+  render();
+}
+
+function handleScanSubmit(ev) {
+  ev.preventDefault();
+  const input = document.getElementById("scanInput");
+  const valor = input.value.trim();
+  input.value = "";
+  processarLeitura(valor);
+  setTimeout(() => { const i = document.getElementById("scanInput"); if (i) i.focus(); }, 0);
+  return false;
+}
+function removerCodigo(index) {
+  const c = coletaAtual();
+  if (!c) return;
+  const codigoAlvo = c.codigos[index] ? c.codigos[index].codigo : "";
+  const qtdAtual = c.codigos.filter(k => k.codigo === codigoAlvo).length;
+  const msg = qtdAtual > 1
+    ? `Remover uma unidade do código ${codigoAlvo}? Restarão ${qtdAtual - 1}.`
+    : "Remover este código da coleta?";
+  if (!confirm(msg)) return;
+  c.codigos.splice(index, 1);
+  persistirEstadoLocal();
+  tocarFeedback("notificacao");
+  render();
+}
+function limparColeta() {
+  const c = coletaAtual();
+  if (!c || c.codigos.length === 0) return;
+  if (!confirm(`Limpar todos os ${c.codigos.length} códigos desta coleta? Esta ação não pode ser desfeita.`)) return;
+  c.codigos = [];
+  estado.ultimaLeitura = null;
+  persistirEstadoLocal();
+  tocarFeedback("alerta");
+  render();
+}
+function finalizarColeta() {
+  const c = coletaAtual();
+  if (!c) return;
+  if (c.codigos.length === 0) { alert("Escaneie ao menos um código antes de finalizar a coleta."); return; }
+  if (!confirm("Finalizar esta coleta? Ela ficará disponível em Histórico e Relatórios, mas não poderá mais receber novas leituras.")) return;
+  c.finalizada = true;
+  persistirEstadoLocal();
+  tocarFeedback("sucesso");
+  irPara("inicio");
+}
+function excluirColeta(id) {
+  if (!confirm("Excluir esta coleta permanentemente? Todos os códigos dela serão perdidos.")) return;
+  estado.coletas = estado.coletas.filter(c => c.id !== id);
+  if (estado.coletaAtualId === id) estado.coletaAtualId = null;
+  persistirEstadoLocal();
+  tocarFeedback("alerta");
+  render();
+}
+
+// ======================= MÓDULO IMPORTAÇÃO =======================
+function abrirImportador() { document.getElementById("fileImportar").click(); }
+function lerArquivoTexto(file) {
+  return new Promise((resolve) => {
+    const r = new FileReader();
+    r.onload = (ev) => resolve(String(ev.target.result || ""));
+    r.readAsText(file, "utf-8");
+  });
+}
+function importarArquivoCodigos(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  lerArquivoTexto(file).then((texto) => {
+    const linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const validos = [];
+    const invalidos = [];
+    linhas.forEach(l => {
+      const codigo = l.split(/[;,\t ]+/)[0].trim();
+      if (/^\d{12,13}$/.test(codigo)) validos.push(codigo);
+      else invalidos.push(l);
+    });
+    if (validos.length === 0) { alert("Nenhum código válido (12 ou 13 dígitos) foi encontrado no arquivo."); tocarFeedback("erro"); input.value = ""; return; }
+
+    const nomeSugerido = "Importação " + file.name.replace(/\.[^.]+$/, "");
+    const nome = prompt(`${validos.length} código(s) válido(s) encontrado(s). Nome da coleta:`, nomeSugerido);
+    input.value = "";
+    if (nome === null) return;
+    const c = { id: novoId(), nome: nome.trim() || nomeSugerido, criadaEm: new Date().toISOString(), finalizada: false, codigos: validos.map(cod => ({ codigo: cod, hora: new Date().toISOString(), usuario: estado.usuarioNome || "—" })) };
+    estado.coletas.unshift(c);
+    estado.coletaAtualId = c.id;
+    tocarFeedback("sucesso");
+    if (invalidos.length) alert(`Importação concluída. ${validos.length} código(s) importado(s), ${invalidos.length} linha(s) ignorada(s) por não terem 12/13 dígitos.`);
+    irPara("coleta");
+  });
+}
+
+// ======================= EXPORTAÇÃO / COMPARTILHAMENTO =======================
+function nomeArquivoBase(c) { return c.nome.trim().replace(/[^a-zA-Z0-9À-ú _-]/g, "").replace(/\s+/g, "_") || "coleta"; }
+function gerarConteudoTXT(c) { return c.codigos.slice().reverse().map(x => x.codigo).join("\n"); }
+function gerarConteudoCSV(c) {
+  const header = "Codigo;DataHora;Usuario";
+  const linhas = c.codigos.slice().reverse().map(x => `${x.codigo};${new Date(x.hora).toLocaleString("pt-BR")};${x.usuario || "—"}`);
+  return "\uFEFF" + [header, ...linhas].join("\n");
+}
+function baixarBlob(conteudo, tipo, nomeArquivo) {
+  const blob = new Blob([conteudo], { type: tipo });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = nomeArquivo;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ======================= BACKUP DO TXT NO GOOGLE DRIVE =======================
+// Envia uma cópia do TXT exportado diretamente para uma pasta do Google Drive, através de um
+// "Google Apps Script" publicado como Web App (ver instruções completas no chat). Cada envio
+// SOBRESCREVE o arquivo anterior na pasta (mesmo nome = mesmo arquivo sempre atualizado),
+// então o Drive sempre reflete a última exportação, sem acumular cópias antigas.
+//
+// IMPORTANTE: troque a URL abaixo pela URL de implantação (deployment) do SEU Google Apps
+// Script, gerada depois que você publicar o script como "Web App" (instruções no chat).
+// Enquanto a URL não for trocada, o envio é ignorado silenciosamente — o download/
+// compartilhamento normal do TXT continua funcionando de qualquer forma.
+const URL_GOOGLE_DRIVE_BACKUP = "https://script.google.com/macros/s/AKfycbyzfOTZU0LHD7PqvOD6ExxVHoTBYTfcSkD1mzlcel3h_5bFNHHtQaMpprdRGyWKOgZ1-g/exec";
+
+async function enviarTxtParaGoogleDrive(conteudo, nomeArquivo, categoria) {
+  if (!URL_GOOGLE_DRIVE_BACKUP || URL_GOOGLE_DRIVE_BACKUP.indexOf("COLOQUE_AQUI") !== -1) return;
+  try {
+    const params = new URLSearchParams();
+    params.append("nomeArquivo", nomeArquivo);
+    params.append("conteudo", conteudo);
+    params.append("categoria", categoria);
+    const resposta = await fetch(URL_GOOGLE_DRIVE_BACKUP, { method: "POST", body: params });
+    const texto = (await resposta.text()).trim();
+    if (texto === "OK") {
+      mostrarToast("Cópia enviada para o Google Drive ✓");
+    } else {
+      // Mostra a resposta exata do Google (ex.: "ERRO: ..."), pra dar pra identificar a causa
+      // certinha em vez de um aviso genérico.
+      mostrarToast("Google Drive respondeu: " + texto.substring(0, 200), 9000);
+    }
+  } catch (e) {
+    mostrarToast("Sem conexão ou bloqueio de rede: " + (e && e.message ? e.message : e), 9000);
+  }
+}
+
+// Pergunta pro operador pra qual tela/sistema essa exportação se destina, e só então envia
+// pro Drive na pasta certa — sem isso, os arquivos de todos os módulos (Conferência, Auditoria,
+// IMEI) cairiam todos juntos numa única pasta, misturando dados de finalidades diferentes.
+const DESTINOS_DRIVE = [
+  { categoria: "conferencia_leituras", label: "Conferência de Nota Fiscal" },
+  { categoria: "auditoria_banco2", label: "Auditoria de Estoque" },
+  { categoria: "imei_banco", label: "Best Seller / IMEI" },
+];
+
+function perguntarDestinoDrive(aoEscolher) {
+  const overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed; inset:0; background:rgba(20,56,83,0.85); display:flex; align-items:center; justify-content:center; z-index:99998; padding:20px;";
+  overlay.innerHTML = `
+    <div style="background:#fff; border-radius:12px; padding:20px; max-width:380px; width:100%; box-shadow:0 10px 30px rgba(0,0,0,.3);">
+      <div style="font-size:14px; font-weight:700; color:#143853; margin-bottom:4px;">📂 Enviar para qual sistema?</div>
+      <div style="font-size:11.5px; color:#5A6478; margin-bottom:14px;">Escolha onde essa coleta vai ser usada, pra salvar na pasta certa do Google Drive.</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        ${DESTINOS_DRIVE.map((d, i) => `<button data-i="${i}" style="background:#EFF4F8; color:#143853; border:none; padding:12px; border-radius:8px; font-weight:700; font-size:12.5px; cursor:pointer; text-align:left;">${d.label}</button>`).join("")}
+      </div>
+      <button id="btnCancelarDestinoDrive" style="margin-top:12px; width:100%; background:none; color:#9AA3B8; border:none; padding:8px; font-size:12px; cursor:pointer;">Cancelar (não enviar ao Drive)</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
+  document.getElementById("btnCancelarDestinoDrive").onclick = () => overlay.remove();
+  overlay.querySelectorAll("button[data-i]").forEach((btn) => {
+    btn.onclick = () => {
+      const destino = DESTINOS_DRIVE[Number(btn.dataset.i)];
+      overlay.remove();
+      aoEscolher(destino.categoria);
+    };
+  });
+}
+
+async function compartilharOuBaixar(conteudo, tipo, nomeArquivo, tituloCompartilhar) {
+  try {
+    const file = new File([conteudo], nomeArquivo, { type: tipo });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: tituloCompartilhar });
+      return;
+    }
+  } catch (e) {}
+  baixarBlob(conteudo, tipo, nomeArquivo);
+}
+function exportarTXT() {
+  const c = coletaAtual();
+  if (!c) return;
+  const conteudo = gerarConteudoTXT(c);
+  const nomeArquivo = `${nomeArquivoBase(c)}.txt`;
+  compartilharOuBaixar(conteudo, "text/plain;charset=utf-8", nomeArquivo, c.nome);
+  // No Drive, o nome inclui o operador — assim, coletas com o MESMO nome vindas de operadores/
+  // aparelhos diferentes não se sobrescrevem umas às outras (cada operador tem seu próprio
+  // arquivo, sempre atualizado para a coleta com aquele nome).
+  const operador = (estado.usuarioNome || "sem-operador").trim().replace(/[^a-zA-Z0-9À-ú _-]/g, "").replace(/\s+/g, "_") || "sem-operador";
+  const nomeArquivoDrive = `${nomeArquivoBase(c)}__${operador}.txt`;
+  perguntarDestinoDrive((categoria) => {
+    enviarTxtParaGoogleDrive(conteudo, nomeArquivoDrive, categoria);
+  });
+  tocarFeedback("sucesso");
+  fecharModalExportar();
+}
+
+async function copiarParaConferencia() {
+  const c = coletaAtual();
+  if (!c || c.codigos.length === 0) return;
+  const conteudo = gerarConteudoTXT(c);
+  try {
+    if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error("clipboard indisponível");
+    await navigator.clipboard.writeText(conteudo);
+    fecharModalExportar();
+    tocarFeedback("sucesso");
+    mostrarToast("📋 Códigos copiados! Abra o Sistema de Conferência e toque em \"Colar do Coletor\".");
+  } catch (e) {
+    fecharModalExportar();
+    abrirCopiaManual(conteudo);
+  }
+}
+
+function abrirCopiaManual(conteudo) {
+  const p = paleta();
+  const overlay = document.createElement("div");
+  overlay.className = "modal-fundo centralizado";
+  overlay.style.zIndex = "999";
+  overlay.innerHTML = `
+    <div class="modal-folha" style="background:${p.painel}; color:${p.fg}; max-width:420px;">
+      <h3>Copiar códigos</h3>
+      <p class="sub" style="color:${p.muted};">Não foi possível copiar automaticamente. Toque no texto abaixo, selecione tudo e copie manualmente para colar no Sistema de Conferência.</p>
+      <textarea id="txtCopiaManual" readonly style="width:100%; min-height:160px; box-sizing:border-box; border-radius:10px; border:1px solid ${p.painelBorda}; background:${p.campoBg}; color:${p.fg}; padding:10px; font-family:monospace; font-size:13px;"></textarea>
+      <button style="margin-top:14px; width:100%; border:none; border-radius:10px; padding:12px; background:${p.primaria}; color:#fff; font-weight:700; cursor:pointer; min-height:44px;" onclick="this.closest('.modal-fundo').remove()">Fechar</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  const ta = document.getElementById("txtCopiaManual");
+  ta.value = conteudo;
+  ta.focus();
+  ta.select();
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
+}
+
+function mostrarToast(msg, duracaoMs) {
+  const p = paleta();
+  const t = document.createElement("div");
+  t.textContent = msg;
+  t.style.cssText = `position:fixed; left:50%; bottom:90px; transform:translateX(-50%); background:${p.primariaEscura}; color:#fff; padding:12px 18px; border-radius:10px; font-size:13px; font-weight:600; z-index:9999; box-shadow:0 6px 18px rgba(0,0,0,.35); max-width:88vw; text-align:center; line-height:1.4;`;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.transition = "opacity .4s"; t.style.opacity = "0"; setTimeout(() => t.remove(), 400); }, duracaoMs || 3200);
+}
+function exportarCSV() { const c = coletaAtual(); if (!c) return; compartilharOuBaixar(gerarConteudoCSV(c), "text/csv;charset=utf-8", `${nomeArquivoBase(c)}.csv`, c.nome); tocarFeedback("sucesso"); fecharModalExportar(); }
+
+function exportarPDF() {
+  const c = coletaAtual();
+  if (!c) return;
+  const unicos = new Set(c.codigos.map(x => x.codigo)).size;
+  const duplicados = c.codigos.length - unicos;
+  const agora = new Date();
+  const win = window.open("", "_blank");
+  win.document.write(`
+    <html><head><meta charset="UTF-8"><title>Relatório — ${esc(c.nome)}</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 30px; color: #131A24; }
+      h1 { color: #165D96; font-size: 21px; margin-bottom:4px; }
+      .sub { color: #6B7686; font-size: 12.5px; margin-bottom: 22px; }
+      .stats { display:flex; gap:14px; margin-bottom:24px; }
+      .stat { flex:1; border:1px solid #E3E8F0; border-radius:8px; padding:12px; text-align:center; }
+      .stat .n { font-size:22px; font-weight:800; color:#165D96; }
+      .stat .l { font-size:10.5px; color:#8A94A6; text-transform:uppercase; }
+      table { width:100%; border-collapse:collapse; font-size:12.5px; }
+      th { background:#165D96; color:#fff; text-align:left; padding:8px 10px; font-size:10.5px; text-transform:uppercase; }
+      td { padding:6px 10px; border-bottom:1px solid #EEF1F6; font-family:'Consolas',monospace; }
+      button.btnp { background:#165D96; color:#fff; border:none; padding:10px 16px; border-radius:6px; font-weight:700; cursor:pointer; margin-bottom:20px; }
+      @media print { button.btnp { display:none; } }
+    </style></head><body>
+    <h1>Relatório de Coleta — ${esc(c.nome)}</h1>
+    <div class="sub">Criada em ${new Date(c.criadaEm).toLocaleString("pt-BR")} &nbsp;|&nbsp; Gerado em ${agora.toLocaleString("pt-BR")} &nbsp;|&nbsp; Status: ${c.finalizada ? "Finalizada" : "Em andamento"}</div>
+    <button class="btnp" onclick="window.print()">🖨 Imprimir / Salvar como PDF</button>
+    <div class="stats">
+      <div class="stat"><div class="n">${c.codigos.length}</div><div class="l">Total coletado</div></div>
+      <div class="stat"><div class="n">${unicos}</div><div class="l">Códigos únicos</div></div>
+      <div class="stat"><div class="n">${duplicados}</div><div class="l">Duplicados</div></div>
+    </div>
+    <table>
+      <thead><tr><th>#</th><th>Código</th><th>Data/Hora</th><th>Usuário</th></tr></thead>
+      <tbody>${c.codigos.slice().reverse().map((x, i) => `<tr><td>${i+1}</td><td>${esc(x.codigo)}</td><td>${new Date(x.hora).toLocaleString("pt-BR")}</td><td>${esc(x.usuario||"—")}</td></tr>`).join("")}</tbody>
+    </table>
+    </body></html>
+  `);
+  win.document.close();
+  tocarFeedback("sucesso");
+  fecharModalExportar();
+}
+function abrirModalExportar() { document.getElementById("modalExportar").style.display = "flex"; }
+function fecharModalExportar() { const m = document.getElementById("modalExportar"); if (m) m.style.display = "none"; }
+
+// ======================= MÓDULO BACKUP (todas as coletas) =======================
+function exportarBackupGeral() {
+  const dados = { versao: 2, geradoEm: new Date().toISOString(), proximoId, coletas: estado.coletas };
+  baixarBlob(JSON.stringify(dados, null, 2), "application/json", `backup_coletor_codigos_${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.json`);
+  tocarFeedback("sucesso");
+}
+function abrirRestaurarBackup() { document.getElementById("fileBackup").click(); }
+function restaurarBackupGeral(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const d = JSON.parse(String(ev.target.result));
+      if (!Array.isArray(d.coletas)) throw new Error("formato inválido");
+      if (!confirm(`Restaurar backup com ${d.coletas.length} coleta(s)? Isso vai SUBSTITUIR os dados atuais desta sessão.`)) { input.value = ""; return; }
+      estado.coletas = d.coletas;
+      proximoId = d.proximoId || (Math.max(0, ...d.coletas.map(c => c.id)) + 1);
+      estado.coletaAtualId = null;
+      persistirEstadoLocal();
+      tocarFeedback("sucesso");
+      alert("Backup restaurado com sucesso.");
+      irPara("inicio");
+    } catch (e) { alert("Arquivo de backup inválido."); tocarFeedback("erro"); }
+    input.value = "";
+  };
+  reader.readAsText(file);
+}
+
+// ======================= FILTROS =======================
+function onBusca(valor) { estado.busca = valor; render(); const i = document.getElementById("buscaInput"); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
+function toggleSomenteDuplicados() { estado.somenteDuplicados = !estado.somenteDuplicados; render(); }
+
+function esc(s) { const d = document.createElement("div"); d.textContent = String(s); return d.innerHTML; }
+function fmtHora(iso) { return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }); }
+function fmtDataHora(iso) { return new Date(iso).toLocaleString("pt-BR"); }
+
+// ======================= COMPONENTES PADRONIZADOS =======================
+function renderTopo(titulo, corFundo, extraDireita) {
+  const p = paleta();
+  const bloqueado = estado.modoQuiosque;
+  return `<div class="topo" style="background:${corFundo || p.navFundo};">
+    <div class="esq">
+      <button class="icone-btn" onclick="irPara('inicio')" title="${bloqueado ? "App em Modo Quiosque — toque para inserir o PIN e desbloquear" : "Voltar ao início"}">${bloqueado ? "🔒" : "←"}</button>
+      <h1>${titulo}</h1>
+    </div>
+    <div class="dir">${extraDireita || ""}</div>
+  </div>`;
+}
+function renderNavInferior() {
+  const p = paleta();
+  const itens = [
+    { id: "inicio", label: "Início", icone: "🏠" },
+    { id: "historico", label: "Histórico", icone: "🕒" },
+    { id: "relatorios", label: "Relatórios", icone: "📊" },
+    { id: "config", label: "Config", icone: "⚙️" },
+  ];
+  const ativa = (id) => estado.tela === id || (estado.tela === "coleta" && id === "inicio");
+  return `<div class="nav-inferior" style="background:${p.navFundo};">
+    ${itens.map(it => `<button style="color:${ativa(it.id) ? "#fff" : "rgba(255,255,255,.55)"};" onclick="irPara('${it.id}')">
+      <span class="icone">${it.icone}</span>${it.label}
+    </button>`).join("")}
+  </div>`;
+}
+
+// ======================= TELA: INÍCIO =======================
+function renderInicio() {
+  const p = paleta();
+  const totalColetas = estado.coletas.length;
+  const totalCodigos = estado.coletas.reduce((s, c) => s + c.codigos.length, 0);
+  const iniciais = (estado.usuarioNome || "?").trim().charAt(0).toUpperCase();
+  return `
+    <div class="hero" style="background:linear-gradient(135deg, ${p.primariaEscura}, ${p.primaria});">
+      <div class="topo-hero">
+        <div class="usuario-chip" onclick="trocarUsuario()" style="cursor:pointer;">
+          <span class="avatar">${iniciais}</span>
+          <span>${esc(estado.usuarioNome || "Definir usuário")}</span>
+        </div>
+      </div>
+      <div class="linha-titulo">
+        <span class="icone-grande">📷</span>
+        <h2>COLETOR<br/>DE CÓDIGOS</h2>
+      </div>
+      <p>Colete, organize e exporte códigos de barras com agilidade e precisão</p>
+    </div>
+
+    <div class="modulos-grid">
+      <div class="card-modulo" style="background:${p.painel}; color:${p.fg};" onclick="iniciarNovaColeta()">
+        <div class="icone" style="background:${p.primaria};">▤</div>
+        <div class="titulo">Nova Coleta</div>
+        <div class="desc">Iniciar leitura de códigos</div>
+      </div>
+      <div class="card-modulo" style="background:${p.painel}; color:${p.fg};" onclick="irPara('historico')">
+        <div class="icone" style="background:${p.teal};">📂</div>
+        <div class="titulo">Abrir Coleta</div>
+        <div class="desc">Continuar uma coleta existente</div>
+      </div>
+      <div class="card-modulo" style="background:${p.painel}; color:${p.fg};" onclick="abrirImportador()">
+        <div class="icone" style="background:${p.violeta};">📥</div>
+        <div class="titulo">Importação</div>
+        <div class="desc">Importar lista de códigos (TXT)</div>
+      </div>
+      <div class="card-modulo" style="background:${p.painel}; color:${p.fg};" onclick="irPara('relatorios')">
+        <div class="icone" style="background:${p.indigo};">📊</div>
+        <div class="titulo">Relatórios</div>
+        <div class="desc">Estatísticas e exportação</div>
+      </div>
+      <div class="card-modulo" style="background:${p.painel}; color:${p.fg};" onclick="irPara('backup')">
+        <div class="icone" style="background:${p.ambar};">☁️</div>
+        <div class="titulo">Backup</div>
+        <div class="desc">Salvar ou restaurar tudo</div>
+      </div>
+      <div class="card-modulo" style="background:${p.painel}; color:${p.fg};" onclick="irPara('config')">
+        <div class="icone" style="background:${p.slate};">⚙️</div>
+        <div class="titulo">Configurações</div>
+        <div class="desc">Som, contraste e mais</div>
+      </div>
+    </div>
+
+    <div class="stats-rodape" style="background:${p.painel}; color:${p.fg};">
+      <div class="icone" style="background:${p.primaria};">📋</div>
+      <div class="grupo">
+        <div class="item"><div class="n">${totalColetas}</div><div class="l">Total de coletas</div></div>
+        <div class="item"><div class="n">${totalCodigos.toLocaleString("pt-BR")}</div><div class="l">Total de códigos</div></div>
+      </div>
+    </div>
+    <div class="versao-rodape" style="color:${p.fg};">📶 Coletor de Códigos &nbsp;·&nbsp; Versão ${APP_VERSION}</div>
+    <div class="versao-rodape" style="color:${p.fg}; margin-top:-10px;">Desenvolvido por Alessandro Corrêa</div>
+
+    <input type="file" id="fileImportar" accept=".txt,.csv" style="display:none" onchange="importarArquivoCodigos(this)" />
+  `;
+}
+
+// ======================= TELA: COLETA =======================
+function renderColeta() {
+  const p = paleta();
+  const c = coletaAtual();
+  if (!c) {
+    return `${renderTopo("COLETA")}<div class="conteudo"><div class="vazio" style="color:${p.fg};">Nenhuma coleta selecionada.<br/><br/><button style="border:none;border-radius:10px;padding:12px 20px;color:#fff;cursor:pointer;background:${p.primaria};min-height:48px;" onclick="irPara('inicio')">Voltar ao início</button></div></div>${renderNavInferior()}`;
+  }
+
+  const todos = c.codigos;
+  const contagem = {};
+  todos.forEach(x => { contagem[x.codigo] = (contagem[x.codigo] || 0) + 1; });
+  const unicos = Object.keys(contagem).length;
+  const duplicados = todos.length - unicos;
+
+  // Agrupa leituras do mesmo código: em vez de uma linha por leitura repetida, mostra uma única
+  // linha por código com a quantidade total já coletada (todos está do mais novo para o mais
+  // antigo, então o primeiro índice encontrado de cada código é sempre o mais recente).
+  const gruposMap = new Map();
+  todos.forEach((x, idx) => {
+    if (!gruposMap.has(x.codigo)) {
+      gruposMap.set(x.codigo, { codigo: x.codigo, quantidade: 0, indices: [], horaRecente: x.hora, usuarioRecente: x.usuario });
+    }
+    gruposMap.get(x.codigo).quantidade++;
+    gruposMap.get(x.codigo).indices.push(idx);
+  });
+  let listaExibida = Array.from(gruposMap.values());
+  if (estado.somenteDuplicados) listaExibida = listaExibida.filter(x => x.quantidade > 1);
+  if (estado.busca.trim()) { const termo = estado.busca.trim(); listaExibida = listaExibida.filter(x => x.codigo.includes(termo)); }
+
+  const ultima = estado.ultimaLeitura;
+  const alertaPrefixo = ultima && ultima.valido && !ultima.prefixoReconhecido;
+  const corBg = ultima ? (ultima.valido ? (alertaPrefixo ? p.alertaBg : p.sucessoBg) : p.erroBg) : null;
+  const corBorda = ultima ? (ultima.valido ? (alertaPrefixo ? p.alerta : p.sucesso) : p.erro) : null;
+  const corFg = ultima ? (ultima.valido ? (alertaPrefixo ? p.alertaFg : p.sucessoFg) : p.erroFg) : null;
+  const painelUltimo = ultima ? `
+    <div class="status-leitura" style="background:${corBg}; border-color:${corBorda};">
+      <div class="rotulo" style="color:${corFg};">ÚLTIMA LEITURA</div>
+      <div class="linha">
+        <div class="codigo" style="color:${p.fg};">${esc(ultima.codigo)}${ultima.valido && ultima.quantidade > 1 ? `<span class="dup-tag" style="background:${p.alertaBg}; color:${p.alertaFg}; vertical-align:middle;">×${ultima.quantidade}</span>` : ""}</div>
+        <div class="marca" style="background:${corBorda};">${ultima.valido ? (alertaPrefixo ? "⚠" : "✓") : "✕"}</div>
+      </div>
+      <div class="sub" style="color:${corFg};">${esc(ultima.motivo)}${ultima.valido ? ` · Coletado ${ultima.quantidade}× nesta coleta · digite um número e Enter pra somar mais unidades` : ""}${alertaPrefixo ? " · Prefixo fora do padrão (3000/789), mas aceito normalmente" : ""}</div>
+    </div>` : `<div class="status-leitura" style="background:${p.campoBg}; border-color:${p.painelBorda};">
+      <div class="rotulo" style="color:${p.muted};">STATUS DA OPERAÇÃO</div>
+      <div class="sub" style="color:${p.muted}; margin-top:0;">Aguardando a primeira leitura desta coleta...</div>
+    </div>`;
+
+  return `
+    ${renderTopo(esc(c.nome.toUpperCase()), p.navFundo, `
+      <button onclick="toggleSom()" title="Som">${estado.somAtivo ? "🔊" : "🔇"}</button>
+      <button onclick="toggleTema()" title="Contraste">${estado.temaEscuro ? "☀️" : "🌙"}</button>
+      <button onclick="alterarNomeColeta()" title="Renomear">✏️</button>
+    `)}
+
+    <div class="barra-fixa-leitura" style="background:${p.bg};">
+      ${!c.finalizada ? `
+      <form onsubmit="return handleScanSubmit(event)">
+        <input id="scanInput" class="scan-box" autofocus placeholder="${estado.ultimaLeitura && estado.ultimaLeitura.valido ? "Escaneie o próximo código, ou digite a quantidade a somar e aperte Enter..." : "Aguardando leitura do código (12 ou 13 dígitos)..."}" autocomplete="off" inputmode="numeric" ${estado.scannerFisico ? `readonly onfocus="this.removeAttribute('readonly')"` : ""} style="border-color:${p.primaria}; background:${p.campoBg}; color:${p.fg};" />
+      </form>` : `<div class="card" style="background:${p.campoBg}; color:${p.muted}; text-align:center; font-size:12.5px; margin-bottom:10px;">Esta coleta já foi finalizada e não aceita novas leituras.</div>`}
+      <div class="contador-fixo" style="background:${p.painel}; border-color:${p.painelBorda};">
+        <span class="rotulo-mini" style="color:${p.muted};">TOTAL COLETADO NESTA COLETA</span>
+        <span class="valor-grande" style="color:${p.primaria};">${todos.length}</span>
+      </div>
+      ${painelUltimo}
+    </div>
+
+    <div class="conteudo">
+      <div class="card" style="background:${p.painel}; color:${p.fg};">
+        <div class="lote-linha">
+          <div class="lote-info"><div class="rotulo" style="color:${p.muted};">Lote / Descrição</div><div class="nome">${esc(c.nome)}</div></div>
+          ${c.finalizada ? `<span class="badge-status" style="background:${p.sucessoBg}; color:${p.sucessoFg};">Finalizada</span>` : `<button class="btn-outline" style="border-color:${p.primaria}; color:${p.primaria};" onclick="alterarNomeColeta()">ALTERAR</button>`}
+        </div>
+        ${estado.ultimoSalvamento
+          ? `<div style="margin-top:9px; font-size:11px; color:${p.sucessoFg}; display:flex; align-items:center; gap:5px;">💾 Salvo no aparelho às ${new Date(estado.ultimoSalvamento).toLocaleTimeString("pt-BR")} — protegido mesmo se o app fechar</div>`
+          : `<div style="margin-top:9px; font-size:11px; color:${p.muted}; display:flex; align-items:center; gap:5px;">💾 Salvamento automático local ativo — a cada leitura e a cada 10 minutos</div>`}
+      </div>
+
+      <div class="stats-grid3">
+        <div class="stat-box" style="background:${p.painel};"><div class="icone">📋</div><div class="n" style="color:${p.primaria};">${todos.length}</div><div class="l" style="color:${p.muted};">Total coletado</div></div>
+        <div class="stat-box" style="background:${p.painel};"><div class="icone">⭐</div><div class="n" style="color:${p.ambar};">${unicos}</div><div class="l" style="color:${p.muted};">Únicos</div></div>
+        <div class="stat-box" style="background:${p.painel};"><div class="icone">🔁</div><div class="n" style="color:${p.violeta};">${duplicados}</div><div class="l" style="color:${p.muted};">Duplicados</div></div>
+      </div>
+
+      <div class="lista-titulo"><span class="txt" style="color:${p.muted};">Códigos Coletados</span><span class="n" style="color:${p.primaria};">${listaExibida.length}</span></div>
+
+      ${listaExibida.length === 0 ? `<div class="vazio" style="color:${p.muted};">${todos.length === 0 ? "Nenhum código escaneado ainda." : "Nenhum código encontrado para esse filtro."}</div>` :
+        listaExibida.map(x => `
+          <div class="item-codigo" style="background:${p.painel};">
+            <div class="marca" style="background:${p.sucesso};">✓</div>
+            <div class="txt">
+              <div><span class="cod" style="color:${p.fg};">${esc(x.codigo)}</span>${x.quantidade > 1 ? `<span class="dup-tag" style="background:${p.alertaBg}; color:${p.alertaFg};">×${x.quantidade}</span>` : ""}</div>
+              <div class="hora" style="color:${p.muted};">${fmtHora(x.horaRecente)} · ${esc(x.usuarioRecente || "—")}</div>
+            </div>
+            ${!c.finalizada ? `<button class="remover" style="color:${p.muted};" title="Remover a leitura mais recente deste código" onclick="removerCodigo(${x.indices[0]})">✕</button>` : ""}
+          </div>
+        `).join("")}
+    </div>
+
+    ${!c.finalizada ? `
+    <div class="barra-inferior" style="background:${p.painel}; border-color:${p.painelBorda};">
+      <button style="background:${p.primaria};" onclick="abrirModalExportar()" ${todos.length === 0 ? "disabled" : ""}><span class="icone">⬆</span><span>Exportar</span></button>
+      <button style="background:${p.sucesso};" onclick="finalizarColeta()"><span class="icone">✓</span><span>Finalizar</span></button>
+    </div>` : `
+    <div class="barra-inferior" style="background:${p.painel}; border-color:${p.painelBorda};">
+      <button style="background:${p.primaria}; flex:1;" onclick="abrirModalExportar()" ${todos.length === 0 ? "disabled" : ""}><span class="icone">⬆</span><span>Exportar / Compartilhar</span></button>
+    </div>`}
+
+    <div id="modalExportar" class="modal-fundo" style="display:none;" onclick="if(event.target===this) fecharModalExportar()">
+      <div class="modal-folha" style="background:${p.painel}; color:${p.fg};">
+        <h3>Exportar coleta</h3>
+        <p class="sub" style="color:${p.muted};">Escolha o formato. Se o seu aparelho suportar, o menu de compartilhamento do sistema (WhatsApp, e-mail etc.) será aberto automaticamente.</p>
+        <div class="opcao-exportar" onclick="exportarTXT()"><div class="icone" style="background:${p.primaria};">📄</div><div class="txt"><div class="t">Arquivo TXT</div><div class="d" style="color:${p.muted};">Compartilhar via Bluetooth, WhatsApp, e-mail etc. (recomendado)</div></div></div>
+        <div class="opcao-exportar" onclick="copiarParaConferencia()"><div class="icone" style="background:${p.indigo};">📲</div><div class="txt"><div class="t">Copiar para Conferência</div><div class="d" style="color:${p.muted};">Cola direto, se os dois apps estiverem no mesmo aparelho</div></div></div>
+        <div class="opcao-exportar" onclick="exportarCSV()"><div class="icone" style="background:${p.teal};">📊</div><div class="txt"><div class="t">Planilha CSV</div><div class="d" style="color:${p.muted};">Código + data/hora + usuário</div></div></div>
+        <div class="opcao-exportar" onclick="exportarPDF()"><div class="icone" style="background:${p.erro};">📕</div><div class="txt"><div class="t">Relatório em PDF</div><div class="d" style="color:${p.muted};">Abre para impressão / salvar como PDF</div></div></div>
+      </div>
+    </div>
+
+    ${renderNavInferior()}
+  `;
+}
+
+// ======================= TELA: HISTÓRICO =======================
+function renderHistorico() {
+  const p = paleta();
+  if (estado.coletas.length === 0) {
+    return `${renderTopo("HISTÓRICO")}<div class="conteudo"><div class="vazio" style="color:${p.fg};">Nenhuma coleta realizada ainda.<br/><br/><button style="border:none;border-radius:10px;padding:12px 20px;color:#fff;cursor:pointer;background:${p.primaria};min-height:48px;" onclick="iniciarNovaColeta()">+ Nova coleta</button></div></div>${renderNavInferior()}`;
+  }
+  return `${renderTopo("HISTÓRICO DE COLETAS")}
+    <div class="conteudo">
+      ${estado.coletas.map(c => `
+        <div class="coleta-hist-card" style="background:${p.painel}; color:${p.fg};">
+          <div class="coleta-hist-topo" onclick="abrirColeta(${c.id})">
+            <div class="icone" style="background:${c.finalizada ? p.sucesso : p.primaria};">${c.finalizada ? "✓" : "▤"}</div>
+            <div class="txt"><div class="nome">${esc(c.nome)}</div><div class="meta" style="color:${p.muted};">${fmtDataHora(c.criadaEm)} · ${c.codigos.length} código(s)</div></div>
+            <span class="badge-status" style="background:${c.finalizada ? p.sucessoBg : p.alertaBg}; color:${c.finalizada ? p.sucessoFg : p.alertaFg};">${c.finalizada ? "Finalizada" : "Em andamento"}</span>
+          </div>
+          <div class="coleta-hist-acoes" style="border-color:${p.painelBorda};">
+            <button style="background:${p.primaria};" ${c.codigos.length === 0 ? "disabled" : ""} onclick="event.stopPropagation(); estado.coletaAtualId=${c.id}; abrirModalExportar();">⬆ Exportar</button>
+            <button style="background:${p.erro};" ${c.codigos.length === 0 ? "disabled" : ""} onclick="event.stopPropagation(); estado.coletaAtualId=${c.id}; limparColeta();">🗑 Limpar</button>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+    <div id="modalExportar" class="modal-fundo" style="display:none;" onclick="if(event.target===this) fecharModalExportar()">
+      <div class="modal-folha" style="background:${p.painel}; color:${p.fg};">
+        <h3>Exportar coleta</h3>
+        <p class="sub" style="color:${p.muted};">Escolha o formato do arquivo.</p>
+        <div class="opcao-exportar" onclick="exportarTXT()"><div class="icone" style="background:${p.primaria};">📄</div><div class="txt"><div class="t">Arquivo TXT</div><div class="d" style="color:${p.muted};">Compartilhar via Bluetooth, WhatsApp, e-mail etc. (recomendado)</div></div></div>
+        <div class="opcao-exportar" onclick="copiarParaConferencia()"><div class="icone" style="background:${p.indigo};">📲</div><div class="txt"><div class="t">Copiar para Conferência</div><div class="d" style="color:${p.muted};">Cola direto, se os dois apps estiverem no mesmo aparelho</div></div></div>
+        <div class="opcao-exportar" onclick="exportarCSV()"><div class="icone" style="background:${p.teal};">📊</div><div class="txt"><div class="t">Planilha CSV</div></div></div>
+        <div class="opcao-exportar" onclick="exportarPDF()"><div class="icone" style="background:${p.erro};">📕</div><div class="txt"><div class="t">Relatório em PDF</div></div></div>
+      </div>
+    </div>
+    ${renderNavInferior()}`;
+}
+
+// ======================= TELA: RELATÓRIOS =======================
+function renderRelatorios() {
+  const p = paleta();
+  const totalColetas = estado.coletas.length;
+  const totalCodigos = estado.coletas.reduce((s, c) => s + c.codigos.length, 0);
+  const finalizadas = estado.coletas.filter(c => c.finalizada).length;
+  const emAndamento = totalColetas - finalizadas;
+  const media = totalColetas ? Math.round(totalCodigos / totalColetas) : 0;
+
+  return `${renderTopo("RELATÓRIOS")}
+    <div class="conteudo">
+      <div class="modulos-grid" style="grid-template-columns:1fr 1fr; padding:0; margin-bottom:14px;">
+        <div class="stat-grande" style="background:${p.painel}; color:${p.fg};"><div class="n" style="color:${p.primaria};">${totalColetas}</div><div class="l" style="color:${p.muted};">Total de coletas</div></div>
+        <div class="stat-grande" style="background:${p.painel}; color:${p.fg};"><div class="n" style="color:${p.teal};">${totalCodigos.toLocaleString("pt-BR")}</div><div class="l" style="color:${p.muted};">Códigos coletados</div></div>
+        <div class="stat-grande" style="background:${p.painel}; color:${p.fg};"><div class="n" style="color:${p.sucesso};">${finalizadas}</div><div class="l" style="color:${p.muted};">Finalizadas</div></div>
+        <div class="stat-grande" style="background:${p.painel}; color:${p.fg};"><div class="n" style="color:${p.alerta};">${emAndamento}</div><div class="l" style="color:${p.muted};">Em andamento</div></div>
+      </div>
+      <div class="card" style="background:${p.painel}; color:${p.fg};">
+        <h3>📈 Média de códigos por coleta</h3>
+        <div style="font-size:26px; font-weight:800; color:${p.indigo};">${media}</div>
+      </div>
+      <div class="lista-titulo"><span class="txt" style="color:${p.muted};">Coletas para exportar</span></div>
+      ${estado.coletas.length === 0 ? `<div class="vazio" style="color:${p.muted};">Nenhuma coleta ainda.</div>` :
+        estado.coletas.map(c => `
+          <div class="coleta-hist" style="background:${p.painel}; color:${p.fg}; cursor:default;">
+            <div class="icone" style="background:${c.finalizada ? p.sucesso : p.primaria};">${c.finalizada ? "✓" : "▤"}</div>
+            <div class="txt"><div class="nome">${esc(c.nome)}</div><div class="meta" style="color:${p.muted};">${c.codigos.length} código(s)</div></div>
+            <button style="background:${p.primaria}; color:#fff; border:none; border-radius:8px; padding:10px 14px; font-weight:700; cursor:pointer; min-height:40px;" onclick="estado.coletaAtualId=${c.id}; abrirModalExportar();">Exportar</button>
+          </div>
+        `).join("")}
+    </div>
+    <div id="modalExportar" class="modal-fundo" style="display:none;" onclick="if(event.target===this) fecharModalExportar()">
+      <div class="modal-folha" style="background:${p.painel}; color:${p.fg};">
+        <h3>Exportar coleta</h3>
+        <p class="sub" style="color:${p.muted};">Escolha o formato do arquivo.</p>
+        <div class="opcao-exportar" onclick="exportarTXT()"><div class="icone" style="background:${p.primaria};">📄</div><div class="txt"><div class="t">Arquivo TXT</div><div class="d" style="color:${p.muted};">Compartilhar via Bluetooth, WhatsApp, e-mail etc. (recomendado)</div></div></div>
+        <div class="opcao-exportar" onclick="copiarParaConferencia()"><div class="icone" style="background:${p.indigo};">📲</div><div class="txt"><div class="t">Copiar para Conferência</div><div class="d" style="color:${p.muted};">Cola direto, se os dois apps estiverem no mesmo aparelho</div></div></div>
+        <div class="opcao-exportar" onclick="exportarCSV()"><div class="icone" style="background:${p.teal};">📊</div><div class="txt"><div class="t">Planilha CSV</div></div></div>
+        <div class="opcao-exportar" onclick="exportarPDF()"><div class="icone" style="background:${p.erro};">📕</div><div class="txt"><div class="t">Relatório em PDF</div></div></div>
+      </div>
+    </div>
+    ${renderNavInferior()}`;
+}
+
+// ======================= TELA: BACKUP =======================
+function renderBackup() {
+  const p = paleta();
+  return `${renderTopo("BACKUP")}
+    <div class="conteudo">
+      <div class="card" style="background:${p.painel}; color:${p.fg};">
+        <h3>☁️ Backup completo</h3>
+        <p class="desc-card" style="color:${p.muted};">Salva todas as coletas (finalizadas e em andamento) em um único arquivo .json, que pode ser restaurado depois neste ou em outro aparelho.</p>
+        <button style="width:100%; background:${p.ambar}; color:#fff; border:none; border-radius:12px; padding:15px; font-weight:800; cursor:pointer; margin-bottom:10px; min-height:52px;" onclick="exportarBackupGeral()">📥 Exportar backup (.json)</button>
+        <button style="width:100%; background:${p.slate}; color:#fff; border:none; border-radius:12px; padding:15px; font-weight:800; cursor:pointer; min-height:52px;" onclick="abrirRestaurarBackup()">📤 Restaurar backup</button>
+        <input type="file" id="fileBackup" accept="application/json" style="display:none" onchange="restaurarBackupGeral(this)" />
+      </div>
+      <p style="text-align:center; font-size:11.5px; color:${p.muted};">O backup fica apenas no arquivo baixado — este app não envia dados para nenhum servidor.</p>
+    </div>
+    ${renderNavInferior()}`;
+}
+
+// ======================= TELA: CONFIGURAÇÕES =======================
+function renderConfig() {
+  const p = paleta();
+  return `${renderTopo("CONFIGURAÇÕES")}
+    <div class="conteudo">
+      <div class="card" style="background:${p.painel}; color:${p.fg};">
+        <h3>👤 Usuário</h3>
+        <p class="desc-card" style="color:${p.muted};">Nome usado para identificar quem realizou cada leitura nesta sessão.</p>
+        <div style="font-size:17px; font-weight:800; margin-bottom:12px;">${esc(estado.usuarioNome || "Não definido")}</div>
+        <button style="width:100%; background:${p.primaria}; color:#fff; border:none; border-radius:12px; padding:14px; font-weight:800; cursor:pointer; min-height:48px;" onclick="trocarUsuario()">🔁 Trocar usuário</button>
+      </div>
+      <div class="card" style="background:${p.painel}; color:${p.fg};">
+        <div class="config-linha">
+          <div><div class="t">Som de leitura</div><div class="d" style="color:${p.muted};">Bipes de sucesso, erro e alerta em todas as operações</div></div>
+          <div class="toggle" style="background:${estado.somAtivo ? p.sucesso : "#DCE3EE"};" onclick="toggleSom()"><div class="bola"></div></div>
+        </div>
+        <div class="config-linha">
+          <div><div class="t">Modo noturno / alto contraste</div><div class="d" style="color:${p.muted};">Fundo escuro e textos claros para pouca iluminação</div></div>
+          <div class="toggle" style="background:${estado.temaEscuro ? p.sucesso : "#DCE3EE"};" onclick="toggleTema()"><div class="bola"></div></div>
+        </div>
+        <div class="config-linha">
+          <div><div class="t">Leitor físico / teclado integrado</div><div class="d" style="color:${p.muted};">Evita que o teclado virtual abra sozinho ao focar o campo (recomendado com scanner USB/Bluetooth). Não bloqueia digitação nem apps de leitura por câmera.</div></div>
+          <div class="toggle" style="background:${estado.scannerFisico ? p.sucesso : "#DCE3EE"};" onclick="toggleScannerFisico()"><div class="bola"></div></div>
+        </div>
+        <div class="config-linha">
+          <div><div class="t">Backup automático em arquivo</div><div class="d" style="color:${p.muted};">Além do salvamento local (sempre ativo), baixa um arquivo .json da coleta em andamento no intervalo escolhido abaixo${estado.ultimoBackupArquivo ? ` — último às ${new Date(estado.ultimoBackupArquivo).toLocaleTimeString("pt-BR")}` : ""}</div></div>
+          <div class="toggle" style="background:${estado.backupArquivoAtivo ? p.sucesso : "#DCE3EE"};" onclick="estado.backupArquivoAtivo = !estado.backupArquivoAtivo; tocarFeedback('notificacao'); render();"><div class="bola"></div></div>
+        </div>
+        ${estado.backupArquivoAtivo ? `
+        <div style="display:flex; gap:8px; margin-top:-6px; margin-bottom:14px; flex-wrap:wrap;">
+          ${[10, 30, 60].map(min => `
+            <button onclick="definirIntervaloBackupArquivo(${min})" style="
+              flex:1; min-width:80px; padding:10px 8px; border-radius:10px; font-weight:800; font-size:12.5px; cursor:pointer; min-height:40px;
+              border:2px solid ${estado.backupArquivoIntervaloMin === min ? p.primaria : "rgba(120,130,150,.25)"};
+              background:${estado.backupArquivoIntervaloMin === min ? p.primaria : "transparent"};
+              color:${estado.backupArquivoIntervaloMin === min ? "#fff" : p.fg};
+            ">${min === 60 ? "1 hora" : min + " min"}</button>
+          `).join("")}
+        </div>` : ""}
+      </div>
+      <div class="card" style="background:${p.painel}; color:${p.fg};">
+        <h3>🔒 Modo Quiosque</h3>
+        <p class="desc-card" style="color:${p.muted};">Trava o app na tela de coleta em tela cheia, bloqueando a navegação para outras telas até que o PIN seja informado.</p>
+        <div class="config-linha">
+          <div><div class="t">PIN de saída</div><div class="d" style="color:${p.muted};">${estado.pinQuiosque ? "Definido" : "Não definido — obrigatório para ativar"}</div></div>
+          <button class="btn-outline" style="border-color:${p.primaria}; color:${p.primaria};" onclick="definirPinQuiosque()">${estado.pinQuiosque ? "ALTERAR" : "DEFINIR"}</button>
+        </div>
+        <div class="config-linha">
+          <div><div class="t">Ativar Modo Quiosque</div><div class="d" style="color:${p.muted};">Requer uma coleta aberta e o PIN definido</div></div>
+          <div class="toggle" style="background:${estado.modoQuiosque ? p.sucesso : "#DCE3EE"}; ${!estado.pinQuiosque && !estado.modoQuiosque ? "opacity:.4;" : ""}" onclick="toggleModoQuiosque()"><div class="bola"></div></div>
+        </div>
+        <div class="feature-linha" style="border-top:1px solid rgba(120,130,150,.12); margin-top:2px; padding-top:12px;">
+          <span class="marca">ℹ️</span>
+          <span class="txt">Este bloqueio funciona dentro do próprio app (navegador/atalho). Para impedir também os botões Início/Recentes do Android, combine com a Fixação de Tela nativa abaixo.</span>
+        </div>
+        <div class="feature-linha">
+          <span class="marca">⚠️</span>
+          <span class="txt">O Modo Quiosque usa a configuração de "Leitor físico / teclado integrado" definida acima. Ela agora é segura para qualquer tipo de leitor (Bluetooth/USB ou app de câmera) — só evita que o teclado abra sozinho, sem bloquear a digitação.</span>
+        </div>
+      </div>
+      <div class="card" style="background:${p.painel}; color:${p.fg};">
+        <h3>📌 Fixação de Tela do Android</h3>
+        <p class="desc-card" style="color:${p.muted};">Recurso nativo do sistema — precisa ser ativado manualmente nas configurações do aparelho; nenhum site pode ativá-lo sozinho.</p>
+        <div class="feature-linha"><span class="marca">1️⃣</span><span class="txt">Configurações → Segurança (ou Biometria e segurança) → Mais configurações de segurança → Fixação de tela → ativar.</span></div>
+        <div class="feature-linha"><span class="marca">2️⃣</span><span class="txt">Com o app aberto, toque no botão ▢ Recentes (ou faça o gesto de apps recentes).</span></div>
+        <div class="feature-linha"><span class="marca">3️⃣</span><span class="txt">Toque no ícone do app no topo do card e escolha "Fixar".</span></div>
+        <div class="feature-linha"><span class="marca">4️⃣</span><span class="txt">Para desafixar: pressione Voltar e Recentes juntos (ou conforme instrução exibida na tela do aparelho).</span></div>
+      </div>
+      <div class="card" style="background:${p.painel}; color:${p.fg};">
+        <h3>ℹ️ Sobre o aplicativo</h3>
+        <div class="feature-linha"><span class="marca">✓</span><span class="txt">Coleta de códigos de barras pelo scanner de mão ou digitação manual.</span></div>
+        <div class="feature-linha"><span class="marca">✓</span><span class="txt">Funciona totalmente offline — não depende de internet, servidor ou banco de dados externo.</span></div>
+        <div class="feature-linha"><span class="marca">✓</span><span class="txt">Identificação do usuário ao abrir o app, vinculada a cada leitura.</span></div>
+        <div class="feature-linha"><span class="marca">✓</span><span class="txt">Importação de listas de códigos por arquivo TXT/CSV.</span></div>
+        <div class="feature-linha"><span class="marca">✓</span><span class="txt">Exportação em TXT, CSV ou relatório em PDF, com compartilhamento direto quando suportado.</span></div>
+        <div class="feature-linha"><span class="marca">✓</span><span class="txt">Backup completo de todas as coletas em arquivo .json.</span></div>
+        <div class="feature-linha"><span class="marca">✓</span><span class="txt">Aceita apenas códigos com 12 ou 13 dígitos.</span></div>
+        <div class="feature-linha"><span class="marca">✓</span><span class="txt">Dados ficam apenas na memória durante a sessão — exporte antes de fechar o app.</span></div>
+        <div class="feature-linha"><span class="marca">✓</span><span class="txt">Modo Quiosque com PIN, ocultação de teclado virtual e foco automático no campo de leitura.</span></div>
+      </div>
+      <div class="card" style="background:${p.painel}; color:${p.fg};">
+        <button style="width:100%; background:${p.erro}; color:#fff; border:none; border-radius:12px; padding:15px; font-weight:800; cursor:pointer; min-height:52px;" onclick="limparTudo()">🗑 Limpar todas as coletas</button>
+      </div>
+      <p style="text-align:center; font-size:11.5px; color:${p.muted};">Versão ${APP_VERSION}</p>
+    </div>
+    ${renderNavInferior()}`;
+}
+
+function limparTudo() {
+  if (estado.coletas.length === 0) return;
+  if (!confirm("Excluir TODAS as coletas salvas nesta sessão? Esta ação não pode ser desfeita.")) return;
+  estado.coletas = [];
+  estado.coletaAtualId = null;
+  tocarFeedback("alerta");
+  render();
+}
+
+// ======================= RENDER PRINCIPAL =======================
+function render() {
+  const p = paleta();
+  document.body.style.background = p.bg;
+  document.body.style.color = p.fg;
+  const app = document.getElementById("app");
+  let html;
+  if (estado.tela === "inicio") html = `${renderInicio()}${renderNavInferior()}`;
+  else if (estado.tela === "coleta") html = renderColeta();
+  else if (estado.tela === "historico") html = renderHistorico();
+  else if (estado.tela === "relatorios") html = renderRelatorios();
+  else if (estado.tela === "backup") html = renderBackup();
+  else if (estado.tela === "config") html = renderConfig();
+  app.innerHTML = html;
+
+  const scanInput = document.getElementById("scanInput");
+  if (scanInput) scanInput.focus();
+}
+
+// ======================= EVENTOS GLOBAIS: FOCO, QUIOSQUE E TELA =======================
+// Intercepta o botão/gesto "Voltar" do Android enquanto o Modo Quiosque está ativo
+window.addEventListener("popstate", () => {
+  if (estado.modoQuiosque) {
+    try { history.pushState({ kiosk: true }, "", location.href); } catch (e) {}
+    abrirModalPinSaida();
+  }
+});
+// Tenta retomar a tela cheia automaticamente se ela for perdida durante o Modo Quiosque — mas
+// SOMENTE quando um leitor físico de verdade está configurado (scannerFisico=true), caso em que
+// nenhum teclado precisa aparecer e qualquer perda de fullscreen é indevida. Quando o leitor não é
+// físico (teclado virtual ou IME de app de câmera), o Android sai da tela cheia de propósito para
+// abrir espaço para o teclado — insistir em reentrar nesse caso criava um "cabo de guerra" entre
+// abrir o teclado e forçar tela cheia, que impedia a leitura de ser concluída. A tela cheia é só
+// estética; quem realmente bloqueia a navegação é o PIN, então perder a tela cheia é inofensivo.
+document.addEventListener("fullscreenchange", () => {
+  if (estado.modoQuiosque && !document.fullscreenElement && estado.scannerFisico) {
+    try { document.documentElement.requestFullscreen && document.documentElement.requestFullscreen().catch(() => {}); } catch (e) {}
+  }
+});
+// Reativa o Wake Lock e refoca o campo de leitura quando o app volta a ficar visível
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    if (estado.modoQuiosque) solicitarWakeLock();
+    refocarCampoLeitura();
+  }
+});
+// Mantém o cursor no campo de leitura: qualquer toque fora de um controle interativo devolve o foco a ele
+document.addEventListener("click", (ev) => {
+  if (estado.tela !== "coleta") return;
+  const modalExportar = document.getElementById("modalExportar");
+  if (modalExportar && modalExportar.style.display === "flex") return;
+  const alvoInterativo = ev.target.closest("button, a, input, textarea, select");
+  if (!alvoInterativo) refocarCampoLeitura();
+});
+// Caso o campo de leitura perca o foco por algum motivo, devolve o foco automaticamente
+// ======================= REDE DE SEGURANÇA PARA LEITURAS PERDIDAS =======================
+// Por que isso existe: a tela inteira é redesenhada (innerHTML) a cada leitura, o que recria o
+// campo de leitura do zero. Isso costuma ser instantâneo, mas em coletas com muitas leituras
+// seguidas — ou em aparelhos mais lentos — pode existir uma fração de segundo em que NENHUM campo
+// está focado (o campo antigo já foi destruído, o novo ainda não recebeu o foco). Um leitor físico
+// de código de barras apita assim que decodifica a imagem, independente de o navegador estar
+// pronto para receber o texto — então, se os caracteres chegarem exatamente nessa janela, o app
+// nunca vê esse código: o leitor apita, mas nada é registrado.
+// Esta captura global funciona como uma segunda linha de defesa: enquanto estivermos na tela de
+// coleta e o campo de leitura não estiver focado (por qualquer motivo), os dígitos digitados são
+// acumulados aqui mesmo assim e processados normalmente ao aparecer o Enter que o leitor sempre
+// envia ao final do código — garantindo que nenhuma leitura se perca.
+let bufferLeituraSegundaVia = "";
+let bufferLeituraSegundaViaTimer = null;
+document.addEventListener("keydown", (ev) => {
+  if (estado.tela !== "coleta") { bufferLeituraSegundaVia = ""; return; }
+  const alvo = ev.target;
+  const alvoEhCampoDeTexto = alvo && (alvo.tagName === "INPUT" || alvo.tagName === "TEXTAREA" || alvo.isContentEditable);
+  // Se o campo de leitura oficial (ou qualquer outro campo de texto, ex.: um modal aberto) já está
+  // com o foco, deixamos o fluxo normal (formulário) cuidar disso — não processamos duas vezes.
+  if (alvoEhCampoDeTexto) { bufferLeituraSegundaVia = ""; return; }
+
+  if (bufferLeituraSegundaViaTimer) clearTimeout(bufferLeituraSegundaViaTimer);
+  // Se ficar mais de 1.2s sem nenhuma tecla nova, descarta o que tinha (evita misturar digitação
+  // solta com uma leitura de código real, que chega tudo em poucos milissegundos).
+  bufferLeituraSegundaViaTimer = setTimeout(() => { bufferLeituraSegundaVia = ""; }, 1200);
+
+  if (ev.key === "Enter") {
+    if (bufferLeituraSegundaVia) {
+      const codigoRecuperado = bufferLeituraSegundaVia;
+      bufferLeituraSegundaVia = "";
+      processarLeitura(codigoRecuperado);
+      refocarCampoLeitura();
+    }
+  } else if (/^[0-9]$/.test(ev.key)) {
+    bufferLeituraSegundaVia += ev.key;
+  }
+  // Outras teclas (setas, Shift, etc.) são ignoradas e não interrompem o acúmulo do código.
+});
+// ======================= INICIALIZAÇÃO =======================
+// Recupera automaticamente a última sessão salva (se o app foi fechado, travou, ou o navegador
+// recarregou a página) antes da primeira renderização.
+restaurarEstadoLocalAoAbrir();
+if (estado.coletas.length > 0 && estado.ultimoSalvamento) {
+  const totalCodigos = estado.coletas.reduce((s, c) => s + c.codigos.length, 0);
+  alert(`Sessão recuperada automaticamente!\n\n${estado.coletas.length} coleta(s) e ${totalCodigos} código(s) do último salvamento (${new Date(estado.ultimoSalvamento).toLocaleString("pt-BR")}) foram restaurados.`);
+}
+
+// Salvamento automático redundante a cada 10 minutos, além do salvamento imediato já feito a cada
+// leitura/alteração — cobre qualquer cenário não previsto e garante que nunca passem mais de 10
+// minutos sem uma cópia atualizada no armazenamento local do navegador.
+setInterval(persistirEstadoLocal, 10 * 60 * 1000);
+
+// Backup automático em arquivo (.json) — a função abaixo é chamada a cada 30 segundos, mas só baixa
+// de fato o arquivo quando o intervalo escolhido em Configurações (10, 30 ou 60 minutos) for atingido.
+// Pode ser desativado em Configurações.
+setInterval(fazerBackupArquivoPeriodico, 30 * 1000);
+
+// Salva imediatamente se o usuário sair do app/trocar de aba, para não depender só do timer de 10 min.
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") persistirEstadoLocal(); });
+window.addEventListener("beforeunload", persistirEstadoLocal);
+
+render();
+
+</script>
+</body>
+</html>
