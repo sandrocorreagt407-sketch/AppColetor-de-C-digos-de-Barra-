@@ -844,44 +844,35 @@ function mostrarToast(msg, duracaoMs) {
 }
 function exportarCSV() { const c = coletaAtual(); if (!c) return; compartilharOuBaixar(gerarConteudoCSV(c), "text/csv;charset=utf-8", `${nomeArquivoBase(c)}.csv`, c.nome); tocarFeedback("sucesso"); fecharModalExportar(); }
 
-function exportarPDF() {
-  const c = coletaAtual();
-  if (!c) return;
+function gerarConteudoRelatorioTXT(c) {
   const unicos = new Set(c.codigos.map(x => x.codigo)).size;
   const duplicados = c.codigos.length - unicos;
   const agora = new Date();
-  const win = window.open("", "_blank");
-  win.document.write(`
-    <html><head><meta charset="UTF-8"><title>Relatório — ${esc(c.nome)}</title>
-    <style>
-      body { font-family: Arial, sans-serif; padding: 30px; color: #131A24; }
-      h1 { color: #165D96; font-size: 21px; margin-bottom:4px; }
-      .sub { color: #6B7686; font-size: 12.5px; margin-bottom: 22px; }
-      .stats { display:flex; gap:14px; margin-bottom:24px; }
-      .stat { flex:1; border:1px solid #E3E8F0; border-radius:8px; padding:12px; text-align:center; }
-      .stat .n { font-size:22px; font-weight:800; color:#165D96; }
-      .stat .l { font-size:10.5px; color:#8A94A6; text-transform:uppercase; }
-      table { width:100%; border-collapse:collapse; font-size:12.5px; }
-      th { background:#165D96; color:#fff; text-align:left; padding:8px 10px; font-size:10.5px; text-transform:uppercase; }
-      td { padding:6px 10px; border-bottom:1px solid #EEF1F6; font-family:'Consolas',monospace; }
-      button.btnp { background:#165D96; color:#fff; border:none; padding:10px 16px; border-radius:6px; font-weight:700; cursor:pointer; margin-bottom:20px; }
-      @media print { button.btnp { display:none; } }
-    </style></head><body>
-    <h1>Relatório de Coleta — ${esc(c.nome)}</h1>
-    <div class="sub">Criada em ${new Date(c.criadaEm).toLocaleString("pt-BR")} &nbsp;|&nbsp; Gerado em ${agora.toLocaleString("pt-BR")} &nbsp;|&nbsp; Status: ${c.finalizada ? "Finalizada" : "Em andamento"}</div>
-    <button class="btnp" onclick="window.print()">🖨 Imprimir / Salvar como PDF</button>
-    <div class="stats">
-      <div class="stat"><div class="n">${c.codigos.length}</div><div class="l">Total coletado</div></div>
-      <div class="stat"><div class="n">${unicos}</div><div class="l">Códigos únicos</div></div>
-      <div class="stat"><div class="n">${duplicados}</div><div class="l">Duplicados</div></div>
-    </div>
-    <table>
-      <thead><tr><th>#</th><th>Código</th><th>Data/Hora</th><th>Usuário</th></tr></thead>
-      <tbody>${c.codigos.slice().reverse().map((x, i) => `<tr><td>${i+1}</td><td>${esc(x.codigo)}</td><td>${new Date(x.hora).toLocaleString("pt-BR")}</td><td>${esc(x.usuario||"—")}</td></tr>`).join("")}</tbody>
-    </table>
-    </body></html>
-  `);
-  win.document.close();
+  const linhas = [];
+  linhas.push(`RELATÓRIO DE COLETA — ${c.nome}`);
+  linhas.push('='.repeat(40));
+  linhas.push(`Criada em: ${new Date(c.criadaEm).toLocaleString("pt-BR")}`);
+  linhas.push(`Gerado em: ${agora.toLocaleString("pt-BR")}`);
+  linhas.push(`Status: ${c.finalizada ? "Finalizada" : "Em andamento"}`);
+  linhas.push('');
+  linhas.push(`Total coletado: ${c.codigos.length}`);
+  linhas.push(`Códigos únicos: ${unicos}`);
+  linhas.push(`Duplicados: ${duplicados}`);
+  linhas.push('');
+  linhas.push('-'.repeat(40));
+  linhas.push('#\tCÓDIGO\t\tDATA/HORA\t\tUSUÁRIO');
+  linhas.push('-'.repeat(40));
+  c.codigos.slice().reverse().forEach((x, i) => {
+    linhas.push(`${i + 1}\t${x.codigo}\t${new Date(x.hora).toLocaleString("pt-BR")}\t${x.usuario || "—"}`);
+  });
+  return linhas.join('\n');
+}
+function exportarRelatorioTXT() {
+  const c = coletaAtual();
+  if (!c) return;
+  const conteudo = gerarConteudoRelatorioTXT(c);
+  const nomeArquivo = `${nomeArquivoBase(c)}_relatorio.txt`;
+  compartilharOuBaixar(conteudo, "text/plain;charset=utf-8", nomeArquivo, c.nome);
   tocarFeedback("sucesso");
   fecharModalExportar();
 }
@@ -1135,7 +1126,7 @@ function renderColeta() {
         <div class="opcao-exportar" onclick="exportarTXT()"><div class="icone" style="background:${p.primaria};">📄</div><div class="txt"><div class="t">Arquivo TXT</div><div class="d" style="color:${p.muted};">Compartilhar via Bluetooth, WhatsApp, e-mail etc. (recomendado)</div></div></div>
         <div class="opcao-exportar" onclick="copiarParaConferencia()"><div class="icone" style="background:${p.indigo};">📲</div><div class="txt"><div class="t">Copiar para Conferência</div><div class="d" style="color:${p.muted};">Cola direto, se os dois apps estiverem no mesmo aparelho</div></div></div>
         <div class="opcao-exportar" onclick="exportarCSV()"><div class="icone" style="background:${p.teal};">📊</div><div class="txt"><div class="t">Planilha CSV</div><div class="d" style="color:${p.muted};">Código + data/hora + usuário</div></div></div>
-        <div class="opcao-exportar" onclick="exportarPDF()"><div class="icone" style="background:${p.erro};">📕</div><div class="txt"><div class="t">Relatório em PDF</div><div class="d" style="color:${p.muted};">Abre para impressão / salvar como PDF</div></div></div>
+        <div class="opcao-exportar" onclick="exportarRelatorioTXT()"><div class="icone" style="background:${p.erro};">📄</div><div class="txt"><div class="t">Relatório em TXT</div><div class="d" style="color:${p.muted};">Resumo com estatísticas + lista completa, em texto</div></div></div>
       </div>
     </div>
 
@@ -1172,7 +1163,7 @@ function renderHistorico() {
         <div class="opcao-exportar" onclick="exportarTXT()"><div class="icone" style="background:${p.primaria};">📄</div><div class="txt"><div class="t">Arquivo TXT</div><div class="d" style="color:${p.muted};">Compartilhar via Bluetooth, WhatsApp, e-mail etc. (recomendado)</div></div></div>
         <div class="opcao-exportar" onclick="copiarParaConferencia()"><div class="icone" style="background:${p.indigo};">📲</div><div class="txt"><div class="t">Copiar para Conferência</div><div class="d" style="color:${p.muted};">Cola direto, se os dois apps estiverem no mesmo aparelho</div></div></div>
         <div class="opcao-exportar" onclick="exportarCSV()"><div class="icone" style="background:${p.teal};">📊</div><div class="txt"><div class="t">Planilha CSV</div></div></div>
-        <div class="opcao-exportar" onclick="exportarPDF()"><div class="icone" style="background:${p.erro};">📕</div><div class="txt"><div class="t">Relatório em PDF</div></div></div>
+        <div class="opcao-exportar" onclick="exportarRelatorioTXT()"><div class="icone" style="background:${p.erro};">📄</div><div class="txt"><div class="t">Relatório em TXT</div></div></div>
       </div>
     </div>
     ${renderNavInferior()}`;
@@ -1216,7 +1207,7 @@ function renderRelatorios() {
         <div class="opcao-exportar" onclick="exportarTXT()"><div class="icone" style="background:${p.primaria};">📄</div><div class="txt"><div class="t">Arquivo TXT</div><div class="d" style="color:${p.muted};">Compartilhar via Bluetooth, WhatsApp, e-mail etc. (recomendado)</div></div></div>
         <div class="opcao-exportar" onclick="copiarParaConferencia()"><div class="icone" style="background:${p.indigo};">📲</div><div class="txt"><div class="t">Copiar para Conferência</div><div class="d" style="color:${p.muted};">Cola direto, se os dois apps estiverem no mesmo aparelho</div></div></div>
         <div class="opcao-exportar" onclick="exportarCSV()"><div class="icone" style="background:${p.teal};">📊</div><div class="txt"><div class="t">Planilha CSV</div></div></div>
-        <div class="opcao-exportar" onclick="exportarPDF()"><div class="icone" style="background:${p.erro};">📕</div><div class="txt"><div class="t">Relatório em PDF</div></div></div>
+        <div class="opcao-exportar" onclick="exportarRelatorioTXT()"><div class="icone" style="background:${p.erro};">📄</div><div class="txt"><div class="t">Relatório em TXT</div></div></div>
       </div>
     </div>
     ${renderNavInferior()}`;
@@ -1313,7 +1304,7 @@ function renderConfig() {
         <div class="feature-linha"><span class="marca">✓</span><span class="txt">Funciona totalmente offline — não depende de internet, servidor ou banco de dados externo.</span></div>
         <div class="feature-linha"><span class="marca">✓</span><span class="txt">Identificação do usuário ao abrir o app, vinculada a cada leitura.</span></div>
         <div class="feature-linha"><span class="marca">✓</span><span class="txt">Importação de listas de códigos por arquivo TXT/CSV.</span></div>
-        <div class="feature-linha"><span class="marca">✓</span><span class="txt">Exportação em TXT, CSV ou relatório em PDF, com compartilhamento direto quando suportado.</span></div>
+        <div class="feature-linha"><span class="marca">✓</span><span class="txt">Exportação em TXT, CSV ou relatório em TXT, com compartilhamento direto quando suportado.</span></div>
         <div class="feature-linha"><span class="marca">✓</span><span class="txt">Backup completo de todas as coletas em arquivo .json.</span></div>
         <div class="feature-linha"><span class="marca">✓</span><span class="txt">Aceita apenas códigos com 12 ou 13 dígitos.</span></div>
         <div class="feature-linha"><span class="marca">✓</span><span class="txt">Dados ficam apenas na memória durante a sessão — exporte antes de fechar o app.</span></div>
